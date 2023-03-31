@@ -9,29 +9,45 @@ import java.awt.event.MouseWheelEvent;
 public class ElectronicsCanvas extends JPanel {
 	public ElectronicsCanvas() {
 		MouseAdapter adapter = new MouseAdapter() {
+			private int lastX;
+			private int lastY;
+
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				System.out.println("eeeee");
-				super.mouseClicked(e);
+				lastX = e.getX();
+				lastY = e.getY();
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				System.out.println("sfgsf");
-				super.mouseDragged(e);
+				int dx = e.getX() - lastX;
+				int dy = e.getY() - lastY;
+				lastX = e.getX();
+				lastY = e.getY();
+
+				ElectronicsCanvas.this.xOffset -= dx * ElectronicsCanvas.this.scale;
+				ElectronicsCanvas.this.yOffset -= dy * ElectronicsCanvas.this.scale;
+				ElectronicsCanvas.this.repaint();
 			}
 
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				ElectronicsCanvas.this.scale += 0.05 * e.getPreciseWheelRotation();
+				double scaleDiff = 0.05 * e.getPreciseWheelRotation();
+				double newScale = ElectronicsCanvas.this.scale + scaleDiff;
 
-				if (ElectronicsCanvas.this.scale < 0.5) {
-					ElectronicsCanvas.this.scale = 0.5;
-				} else if (ElectronicsCanvas.this.scale > 2) {
-					ElectronicsCanvas.this.scale = 2;
+				if (newScale < 0.5) {
+					scaleDiff = 0.5 - ElectronicsCanvas.this.scale;
+				} else if (newScale > 1.5) {
+					scaleDiff = 1.5 - ElectronicsCanvas.this.scale;
 				}
 
-				ElectronicsCanvas.this.repaint();
+				if (scaleDiff != 0) {
+					ElectronicsCanvas.this.scale += scaleDiff;
+					ElectronicsCanvas.this.xOffset -= e.getX() * scaleDiff;
+					ElectronicsCanvas.this.yOffset -= e.getY() * scaleDiff;
+
+					ElectronicsCanvas.this.repaint();
+				}
 			}
 		};
 
@@ -53,12 +69,12 @@ public class ElectronicsCanvas extends JPanel {
 		g.setColor(new Color(30, 30, 30));
 
 		for (int x = this.getX(); x < this.getWidth(); x++) {
-			double drawX = (x + this.xOffset) * scale;
+			double drawX = x * scale + this.xOffset;
 
 			for (int y = this.getY(); y < this.getHeight(); y++) {
-				double drawY = (y + this.yOffset) * scale;
+				double drawY = y * scale + this.yOffset;
 
-				if (drawX % 20 < 1 && drawY % 20 < 1) {
+				if (((int)drawX & 0b1110) == 0 && ((int)drawY & 0b1110) == 0) {
 					g.fillRect(x,y,1,1);
 				}
 			}
