@@ -40,7 +40,22 @@ public class Salt {
 			connection.Components.forEach(System.out::println);
 		}
 
+		JMenuBar bar = new JMenuBar();
+
+		JMenu file = new JMenu("File");
+		bar.add(file);
+
+		JMenu edit = new JMenu("Edit");
+		bar.add(edit);
+
+		JMenu analysis = new JMenu("Analysis");
+		bar.add(analysis);
+
+		JMenu help = new JMenu("Help");
+		bar.add(help);
+
 		JFrame frame = new JFrame();
+		frame.setJMenuBar(bar);
 		frame.add(new ElectronicsCanvas());
 
 		frame.setMinimumSize(new Dimension(300, 300));

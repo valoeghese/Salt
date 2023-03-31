@@ -35,8 +35,8 @@ public class ElectronicsCanvas extends JPanel {
 				double scaleDiff = 0.05 * e.getPreciseWheelRotation();
 				double newScale = ElectronicsCanvas.this.scale + scaleDiff;
 
-				if (newScale < 0.5) {
-					scaleDiff = 0.5 - ElectronicsCanvas.this.scale;
+				if (newScale < 0.25) {
+					scaleDiff = 0.25 - ElectronicsCanvas.this.scale;
 				} else if (newScale > 1.5) {
 					scaleDiff = 1.5 - ElectronicsCanvas.this.scale;
 				}
