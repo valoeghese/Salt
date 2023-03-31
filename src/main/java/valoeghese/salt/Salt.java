@@ -15,7 +15,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 
 public class Salt {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		Database.registerParser(Component.class, raw -> {
 			switch (raw.charAt(0)) {
 			case 'R':
@@ -40,6 +40,7 @@ public class Salt {
 			connection.Components.forEach(System.out::println);
 		}
 
+		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		JMenuBar bar = new JMenuBar();
 
 		JMenu file = new JMenu("File");
