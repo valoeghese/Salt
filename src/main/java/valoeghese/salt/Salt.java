@@ -3,6 +3,7 @@ package valoeghese.salt;
 import valoeghese.salt.component.Component;
 import valoeghese.salt.component.Resistor;
 import valoeghese.salt.component.VoltageSource;
+import valoeghese.salt.gui.ElectronicsCanvas;
 import valoeghese.salt.io.Database;
 
 import javax.swing.*;
@@ -13,7 +14,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-public class Salt extends JFrame {
+public class Salt {
 	public static void main(String[] args) {
 		Database.registerParser(Component.class, raw -> {
 			switch (raw.charAt(0)) {
@@ -39,11 +40,13 @@ public class Salt extends JFrame {
 			connection.Components.forEach(System.out::println);
 		}
 
-		Salt salt = new Salt();
+		JFrame frame = new JFrame();
+		frame.add(new ElectronicsCanvas());
 
-		salt.setMinimumSize(new Dimension(300, 300));
-		salt.setTitle("Salt");
-		salt.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		salt.setVisible(true);
+		frame.setMinimumSize(new Dimension(300, 300));
+		frame.setSize(new Dimension(720, 480));
+		frame.setTitle("Salt");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setVisible(true);
 	}
 }
