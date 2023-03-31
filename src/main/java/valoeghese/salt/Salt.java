@@ -37,7 +37,7 @@ public class Salt {
 		}
 
 		for (Connection connection : connections) {
-			connection.Components.forEach(System.out::println);
+			connection.getComponents().forEach(System.out::println);
 		}
 
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -59,8 +59,10 @@ public class Salt {
 		frame.setJMenuBar(bar);
 		frame.add(new ElectronicsCanvas());
 
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
 		frame.setMinimumSize(new Dimension(300, 300));
-		frame.setSize(new Dimension(720, 480));
+		frame.setBounds(screenSize.width / 4, screenSize.height / 4, screenSize.width / 2, screenSize.height / 2);
 		frame.setTitle("Salt");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);

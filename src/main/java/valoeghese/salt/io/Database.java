@@ -131,7 +131,7 @@ public class Database {
 			A key = null;
 
 			for (var entry : protoRow.entrySet()) {
-				Field field = rowType.getDeclaredField(entry.getKey());
+				Field field = getFieldBySerialisedName(rowType, entry.getKey());
 				field.setAccessible(true);
 				Object parsed;
 
@@ -181,6 +181,29 @@ public class Database {
 		private static Class<?> getFirstGenericClass(Field field) {
 			ParameterizedType generics = (ParameterizedType) field.getGenericType();
 			return (Class<?>) generics.getActualTypeArguments()[0];
+		}
+
+		private Field getFieldBySerialisedName(Class<?> rowType, String serialisedName) throws IllegalArgumentException {
+			// TODO cache this?
+			try {
+				// Attempt 1: get field with exact name
+				return rowType.getDeclaredField(serialisedName);
+			}
+			catch (NoSuchFieldException e) {
+				// Attempt 2: scan fields for serialised name.
+				for (Field field : rowType.getDeclaredFields()) {
+					if (field.isAnnotationPresent(SerialisedName.class)) {
+						SerialisedName actualSerialisedName = field.getDeclaredAnnotation(SerialisedName.class);
+
+						if (serialisedName.equals(actualSerialisedName.value())) {
+							return field;
+						}
+					}
+				}
+			}
+
+			// if could not find a suitable field, code reaches here.
+			throw new IllegalArgumentException("Could not find field with serialised name \"" + serialisedName + "\" in class " + rowType);
 		}
 	}
 
