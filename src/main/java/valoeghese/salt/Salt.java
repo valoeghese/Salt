@@ -46,7 +46,7 @@ public class Salt {
 			throw new UncheckedIOException("Error reading circuit file.", e);
 		}
 
-		System.out.println("Ground node: " + properties);
+		System.out.println("Ground node: " + properties.getGroundNode());
 
 		for (Connection connection : connections) {
 			connection.getComponents().forEach(System.out::println);
