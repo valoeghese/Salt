@@ -1,13 +1,10 @@
 package valoeghese.salt;
 
 import valoeghese.salt.component.Component;
-import valoeghese.salt.component.CurrentSource;
-import valoeghese.salt.component.Resistor;
-import valoeghese.salt.component.VoltageSource;
+import valoeghese.salt.io.Database;
 import valoeghese.salt.ui.AnalysisMenu;
 import valoeghese.salt.ui.EditMenu;
 import valoeghese.salt.ui.ElectronicsCanvas;
-import valoeghese.salt.io.Database;
 import valoeghese.salt.ui.FileMenu;
 import valoeghese.salt.ui.HelpMenu;
 import valoeghese.salt.ui.ViewMenu;
