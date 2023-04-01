@@ -17,13 +17,13 @@ public class Connection {
 	 * The first node of this connection.
 	 */
 	@SerialisedName("NodeA")
-	private String nodeA;
+	private Node nodeA;
 
 	/**
 	 * The second node of this connection.
 	 */
 	@SerialisedName("NodeB")
-	private String nodeB;
+	private Node nodeB;
 
 	/**
 	 * A list of components in the circuit, in order from NodeA to NodeB
@@ -33,6 +33,14 @@ public class Connection {
 
 	public Collection<Component> getComponents() {
 		return this.components;
+	}
+
+	public Node getNodeA() {
+		return this.nodeA;
+	}
+
+	public Node getNodeB() {
+		return this.nodeB;
 	}
 
 	public CurrentSource getCurrentSource() {

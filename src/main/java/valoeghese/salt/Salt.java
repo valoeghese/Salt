@@ -19,28 +19,18 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Map;
 
 public class Salt {
 	public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		Component.registerParser();
 		Position.registerParser();
 
-		List<Node> nodes;
-		List<Connection> connections;
-		Properties properties;
+		Circuit circuit = loadFile(args[0]);
 
-		try (BufferedReader reader = new BufferedReader(new FileReader("run/voltage_divider.crc"))) {
-			Database database = Database.read(reader);
-			nodes = database.readTable("Nodes", Node.class);
-			connections = database.readTable("Connections", Connection.class);
-			properties = database.readTable("Properties", Properties.class, "Key", "Value");
-		} catch (IOException e) {
-			throw new UncheckedIOException("Error reading circuit file.", e);
-		}
+		System.out.println("Ground node: " + circuit.properties().getGroundNode());
 
-		System.out.println("Ground node: " + properties.getGroundNode());
-
-		for (Connection connection : connections) {
+		for (Connection connection : circuit.connections()) {
 			connection.getComponents().forEach(System.out::println);
 		}
 
@@ -64,5 +54,25 @@ public class Salt {
 		frame.setTitle("Salt");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+	}
+
+	private static Circuit loadFile(String file) {
+		Map<String, Node> nodes;
+		List<Connection> connections;
+		Properties properties;
+
+		try (BufferedReader reader = new BufferedReader(new FileReader("run/voltage_divider.crc"))) {
+			Database database = Database.read(reader);
+			nodes = database.readTable("Nodes", Node.class, "Node", String.class);
+
+			Database.registerParser(Node.class, nodes::get);
+
+			connections = database.readTable("Connections", Connection.class);
+			properties = database.readTable("Properties", Properties.class, "Key", "Value");
+		} catch (IOException e) {
+			throw new UncheckedIOException("Error reading circuit file.", e);
+		}
+
+		return new Circuit(nodes, connections, properties);
 	}
 }

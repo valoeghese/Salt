@@ -4,13 +4,13 @@ import valoeghese.salt.io.SerialisedName;
 
 public class Properties {
 	@SerialisedName("GroundNode")
-	private String groundNode;
+	private Node groundNode;
 
 	/**
 	 * Get the ground node for this circuit.
 	 * @return the ground node of this circuit.
 	 */
-	public String getGroundNode() {
+	public Node getGroundNode() {
 		return this.groundNode;
 	}
 }

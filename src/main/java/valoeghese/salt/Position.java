@@ -6,6 +6,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public record Position(int x, int y) {
+	@Override
+	public String toString() {
+		return "(" + x + ", " + y + ")";
+	}
+
 	private static final Pattern SERIALISED_PATTERN = Pattern.compile("^\\(\\s*(-?\\d+)\\s*,\\s*(-?\\d+)\\s*\\)");
 
 	static void registerParser() {
