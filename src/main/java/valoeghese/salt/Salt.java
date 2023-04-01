@@ -1,6 +1,7 @@
 package valoeghese.salt;
 
 import valoeghese.salt.component.Component;
+import valoeghese.salt.component.CurrentSource;
 import valoeghese.salt.component.Resistor;
 import valoeghese.salt.component.VoltageSource;
 import valoeghese.salt.ui.AnalysisMenu;
@@ -27,19 +28,25 @@ public class Salt {
 				return new Resistor(Double.parseDouble(raw.substring(1)));
 			case 'V':
 				return new VoltageSource(Double.parseDouble(raw.substring(1)));
+			case 'I':
+				return new CurrentSource(Double.parseDouble(raw.substring(1)));
 			default:
 				throw new IllegalArgumentException("Unknown component type " + raw.charAt(0));
 			}
 		});
 
 		List<Connection> connections;
+		Properties properties;
 
 		try (BufferedReader reader = new BufferedReader(new FileReader("run/voltage_divider.crc"))) {
 			Database database = Database.read(reader);
 			connections = database.readTable("Connections", Connection.class);
+			properties = database.readTable("Properties", Properties.class, "Key", "Value");
 		} catch (IOException e) {
 			throw new UncheckedIOException("Error reading circuit file.", e);
 		}
+
+		System.out.println("Ground node: " + properties);
 
 		for (Connection connection : connections) {
 			connection.getComponents().forEach(System.out::println);

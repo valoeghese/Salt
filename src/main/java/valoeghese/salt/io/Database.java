@@ -22,6 +22,9 @@ public class Database {
 
 	private final Map<String, ProtoTable> protoTables = new HashMap<>();
 
+	/**
+	 * Read the given table as a map. The given column will be used as an index for row values.
+	 */
 	public <A, T> Map<A, T> readTable(String table, Class<T> rowType, String indexColumn, Class<A> indexType) throws IllegalArgumentException {
 		try {
 			return this.protoTables.get(table).parseAsMap(indexColumn, indexType, rowType);
@@ -30,9 +33,23 @@ public class Database {
 		}
 	}
 
+	/**
+	 * Read the given table as a list of rows.
+	 */
 	public <T> List<T> readTable(String table, Class<T> rowType) throws IllegalArgumentException {
 		try {
 			return this.protoTables.get(table).parseAsList(rowType);
+		} catch (ReflectiveOperationException e) {
+			throw new RuntimeException("Error parsing table " + table, e);
+		}
+	}
+
+	/**
+	 * Read the given table as an object.
+	 */
+	public <T> T readTable(String table, Class<T> objectType, String keyColumn, String valueColumn) throws IllegalArgumentException {
+		try {
+			return this.protoTables.get(table).parseAsObject(objectType, keyColumn, valueColumn);
 		} catch (ReflectiveOperationException e) {
 			throw new RuntimeException("Error parsing table " + table, e);
 		}
@@ -115,6 +132,20 @@ public class Database {
 			return table;
 		}
 
+		public <T> T parseAsObject(Class<T> objectType, String keyColumn, String valueColumn) throws ReflectiveOperationException, IllegalArgumentException {
+			T object = objectType.getDeclaredConstructor().newInstance();
+
+			for (Map<String, Object> protoRow : this.rows) {
+				Field field = getFieldBySerialisedName(objectType, protoRow.get(keyColumn).toString());
+				field.setAccessible(true);
+
+				Object parsed = parse(field, protoRow.get(valueColumn));
+				field.set(object, parsed);
+			}
+
+			return object;
+		}
+
 		public <T> List<T> parseAsList(Class<T> rowType) throws ReflectiveOperationException, IllegalArgumentException {
 			List<T> list = new LinkedList<>();
 
@@ -133,26 +164,7 @@ public class Database {
 			for (var entry : protoRow.entrySet()) {
 				Field field = getFieldBySerialisedName(rowType, entry.getKey());
 				field.setAccessible(true);
-				Object parsed;
-
-				try {
-					if (entry.getValue() instanceof String value) {
-						parsed = parse(field.getType(), value);
-					} else if (entry.getValue() instanceof List<?> protoValues) {
-						List<Object> parsedValues = new ArrayList<>(protoValues.size());
-
-						// parse each value in the list
-						for (Object protoValue : protoValues) {
-							parsedValues.add(parse(getFirstGenericClass(field), (String) protoValue));
-						}
-
-						parsed = parsedValues;
-					} else {
-						throw new IllegalStateException("wtf (A will-never-happen case triggered: proto-row contains a non-string non-list value. Contact a developer.");
-					}
-				} catch (NullPointerException e) {
-					throw new IllegalArgumentException("Cannot parse type " + (entry.getValue() instanceof List<?> ? getFirstGenericClass(field) : field.getType()));
-				}
+				Object parsed = parse(field, entry.getValue());
 
 				if (entry.getKey().equals(indexColumn)) {
 					// indexType super parsed.getClass()
@@ -172,6 +184,27 @@ public class Database {
 			}
 
 			return new AbstractMap.SimpleEntry<>(key, row);
+		}
+
+		private static Object parse(Field field, Object value) throws NullPointerException {
+			try {
+				if (value instanceof String stringValue) {
+					return parse(field.getType(), stringValue);
+				} else if (value instanceof List<?> protoValues) {
+					List<Object> parsedValues = new ArrayList<>(protoValues.size());
+
+					// parse each value in the list
+					for (Object protoValue : protoValues) {
+						parsedValues.add(parse(getFirstGenericClass(field), (String) protoValue));
+					}
+
+					return parsedValues;
+				} else {
+					throw new IllegalStateException("wtf (A will-never-happen case triggered: proto-row contains a non-string non-list value. Contact a developer.");
+				}
+			} catch (NullPointerException e) {
+				throw new IllegalArgumentException("Cannot parse type " + (value instanceof List<?> ? getFirstGenericClass(field) : field.getType()));
+			}
 		}
 
 		private static Object parse(Class<?> clazz, String value) {
