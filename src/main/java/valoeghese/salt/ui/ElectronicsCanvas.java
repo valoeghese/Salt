@@ -104,8 +104,8 @@ public class ElectronicsCanvas extends JPanel {
 			g.fillRect(
 					(int) ((position.x() - nodeSize - this.xOffset)/scale),
 					(int) ((position.y() - nodeSize - this.yOffset)/scale),
-					(int) (2.0 * nodeSize/scale),
-					(int) (2.0 * nodeSize/scale));
+					(int) Math.ceil(2.0 * nodeSize/scale),
+					(int) Math.ceil(2.0 * nodeSize/scale));
 		}
 
 		// Wires and Components
