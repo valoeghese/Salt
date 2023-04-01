@@ -22,24 +22,16 @@ import java.util.List;
 
 public class Salt {
 	public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-		Database.registerParser(Component.class, raw -> {
-			switch (raw.charAt(0)) {
-			case 'R':
-				return new Resistor(Double.parseDouble(raw.substring(1)));
-			case 'V':
-				return new VoltageSource(Double.parseDouble(raw.substring(1)));
-			case 'I':
-				return new CurrentSource(Double.parseDouble(raw.substring(1)));
-			default:
-				throw new IllegalArgumentException("Unknown component type " + raw.charAt(0));
-			}
-		});
+		Component.registerParser();
+		Position.registerParser();
 
+		List<Node> nodes;
 		List<Connection> connections;
 		Properties properties;
 
 		try (BufferedReader reader = new BufferedReader(new FileReader("run/voltage_divider.crc"))) {
 			Database database = Database.read(reader);
+			nodes = database.readTable("Nodes", Node.class);
 			connections = database.readTable("Connections", Connection.class);
 			properties = database.readTable("Properties", Properties.class, "Key", "Value");
 		} catch (IOException e) {
