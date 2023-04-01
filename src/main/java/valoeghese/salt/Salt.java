@@ -20,9 +20,14 @@ import java.util.Map;
 
 public class Salt {
 	private static Circuit circuit;
+	private static ElectronicsCanvas canvas;
 
 	public static Circuit getCircuit() {
 		return circuit;
+	}
+
+	public static ElectronicsCanvas getCanvas() {
+		return canvas;
 	}
 
 	public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -48,7 +53,7 @@ public class Salt {
 
 		JFrame frame = new JFrame();
 		frame.setJMenuBar(bar);
-		frame.add(new ElectronicsCanvas());
+		frame.add(canvas = new ElectronicsCanvas());
 
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 

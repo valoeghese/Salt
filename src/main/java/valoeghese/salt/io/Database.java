@@ -68,7 +68,7 @@ public class Database {
 
 		while ((line = reader.readLine()) != null) {
 			if (!line.isBlank()) {
-				if (line.charAt(0) == '\t') {
+				if (Character.isWhitespace(line.charAt(0))) {
 					if (reading == null) throw new IllegalArgumentException("File contains indented lines that belong to no table!");
 
 					line = line.trim();

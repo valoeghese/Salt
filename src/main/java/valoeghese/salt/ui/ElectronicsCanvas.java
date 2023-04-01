@@ -16,28 +16,13 @@ import java.awt.event.MouseWheelEvent;
 
 public class ElectronicsCanvas extends JPanel {
 	public ElectronicsCanvas() {
-		MouseMotion mouseMotion = new MouseMotion();
+		this.mouseMotion = new MouseMotion();
 
-		this.addMouseWheelListener(mouseMotion);
-		this.addMouseMotionListener(mouseMotion);
-
-		this.getActionMap().put("enhance", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				ElectronicsCanvas.this.zoom(-0.02, mouseMotion.posX, mouseMotion.posY);
-			}
-		});
-
-		this.getActionMap().put("zoomOut", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				ElectronicsCanvas.this.zoom(0.02, mouseMotion.posX, mouseMotion.posY);
-			}
-		});
-
-		this.getInputMap().put(KeyStroke.getKeyStroke('.'), "enhance");
-		this.getInputMap().put(KeyStroke.getKeyStroke(','), "zoomOut");
+		this.addMouseWheelListener(this.mouseMotion);
+		this.addMouseMotionListener(this.mouseMotion);
 	}
+
+	private final MouseMotion mouseMotion;
 
 	private double xOffset = 0.0;
 	private double yOffset = 0.0;
@@ -54,6 +39,14 @@ public class ElectronicsCanvas extends JPanel {
 		loaded = true;
 
 		super.setBounds(x, y, width, height);
+	}
+
+	public void enhance() {
+		this.zoom(-0.02, this.mouseMotion.posX, this.mouseMotion.posY);
+	}
+
+	public void zoomOut() {
+		this.zoom(0.02, this.mouseMotion.posX, this.mouseMotion.posY);
 	}
 
 	private void zoom(double scaleDiff, int mouseX, int mouseY) {
@@ -103,7 +96,7 @@ public class ElectronicsCanvas extends JPanel {
 
 		// Draw circuit onto the board
 
-		// Nodes
+		// Node
 		for (Node node : Salt.getCircuit().nodes().values()) {
 			final double nodeSize = 0.125;
 			Position position = node.getPosition();

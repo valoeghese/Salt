@@ -26,6 +26,12 @@ public class Connection {
 	private Node nodeB;
 
 	/**
+	 * Whether this data should be drawn flipped. That is, with the vertical coming out of node A rather than the horizontal.
+	 */
+	@SerialisedName("Flipped")
+	private boolean flipped;
+
+	/**
 	 * A list of components in the circuit, in order from NodeA to NodeB
 	 */
 	@SerialisedName("Components")
