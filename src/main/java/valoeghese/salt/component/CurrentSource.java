@@ -1,5 +1,9 @@
 package valoeghese.salt.component;
 
+import valoeghese.salt.Direction;
+
+import java.awt.*;
+
 /**
  * Represents a DC current source.
  */
@@ -16,6 +20,12 @@ public class CurrentSource implements Component {
 
 	public double getCurrent() {
 		return this.current;
+	}
+
+	@Override
+	public void draw(Graphics2D graphics2D, int x, int y, double scale, Direction direction) {
+		int size = (int) (2 / scale);
+		graphics2D.drawOval(x, y, size, size);
 	}
 
 	@Override

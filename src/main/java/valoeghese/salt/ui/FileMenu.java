@@ -25,7 +25,7 @@ public class FileMenu extends JMenu {
 		this.add(new JMenuItem("Exit"));
 	}
 
-	class NewMenu extends JMenu {
+	static class NewMenu extends JMenu {
 		public NewMenu() {
 			super("New");
 

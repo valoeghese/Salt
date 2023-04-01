@@ -1,5 +1,10 @@
 package valoeghese.salt.ui;
 
+import valoeghese.salt.Connection;
+import valoeghese.salt.Node;
+import valoeghese.salt.Position;
+import valoeghese.salt.Salt;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -13,21 +18,20 @@ public class ElectronicsCanvas extends JPanel {
 	public ElectronicsCanvas() {
 		MouseMotion mouseMotion = new MouseMotion();
 
-		this.addMouseListener(mouseMotion);
 		this.addMouseWheelListener(mouseMotion);
 		this.addMouseMotionListener(mouseMotion);
 
 		this.getActionMap().put("enhance", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ElectronicsCanvas.this.zoom(-0.25, mouseMotion.posX, mouseMotion.posY);
+				ElectronicsCanvas.this.zoom(-0.02, mouseMotion.posX, mouseMotion.posY);
 			}
 		});
 
 		this.getActionMap().put("zoomOut", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ElectronicsCanvas.this.zoom(0.25, mouseMotion.posX, mouseMotion.posY);
+				ElectronicsCanvas.this.zoom(0.02, mouseMotion.posX, mouseMotion.posY);
 			}
 		});
 
@@ -37,15 +41,28 @@ public class ElectronicsCanvas extends JPanel {
 
 	private double xOffset = 0.0;
 	private double yOffset = 0.0;
-	private double scale = 1.0;
+	private double scale = HOME_SCALE;
+	private boolean loaded;
+
+	@Override
+	public void setBounds(int x, int y, int width, int height) {
+		// start by initially positioning (0,0) in the centre.
+		if (!loaded) {
+			xOffset = scale * -width/2;
+			yOffset = scale * -height/2;
+		}
+		loaded = true;
+
+		super.setBounds(x, y, width, height);
+	}
 
 	private void zoom(double scaleDiff, int mouseX, int mouseY) {
 		double newScale = this.scale + scaleDiff;
 
-		if (newScale < 0.25) {
-			scaleDiff = 0.25 - this.scale;
-		} else if (newScale > 1.5) {
-			scaleDiff = 1.5 - this.scale;
+		if (newScale < MIN_SCALE) {
+			scaleDiff = MIN_SCALE - this.scale;
+		} else if (newScale > MAX_SCALE) {
+			scaleDiff = MAX_SCALE - this.scale;
 		}
 
 		if (scaleDiff != 0) {
@@ -67,17 +84,46 @@ public class ElectronicsCanvas extends JPanel {
 		g.setColor(new Color(30, 30, 30));
 
 		for (int x = this.getX(); x < this.getWidth(); x++) {
-			double drawX = x * scale + this.xOffset;
+			double sketchX = x * scale + this.xOffset;
 
 			for (int y = this.getY(); y < this.getHeight(); y++) {
-				double drawY = y * scale + this.yOffset;
+				double sketchY = y * scale + this.yOffset;
 
-				if (((int)drawX & 0b1110) == 0 && ((int)drawY & 0b1110) == 0) {
-					g.fillRect(x,y,1,1);
+				g.setColor(new Color(30, 30, 30));
+
+				// add 0.5 to move the test from whether it's within (0,0,1/8,1/8) to being (-1/16,-1/16,1/16,1/16)
+				boolean inUnitX = ((int) Math.floor(sketchX * 8 + 0.5) & 0b111) == 0;
+				boolean inUnitY = ((int) Math.floor(sketchY * 8 + 0.5) & 0b111) == 0;
+
+				if (inUnitX && inUnitY) {
+					g.fillRect(x, y, 1, 1);
 				}
 			}
 		}
+
+		// Draw circuit onto the board
+
+		// Nodes
+		for (Node node : Salt.getCircuit().nodes().values()) {
+			final double nodeSize = 0.125;
+			Position position = node.getPosition();
+
+			g.fillRect(
+					(int) ((position.x() - nodeSize - this.xOffset)/scale),
+					(int) ((position.y() - nodeSize - this.yOffset)/scale),
+					(int) (2.0 * nodeSize/scale),
+					(int) (2.0 * nodeSize/scale));
+		}
+
+		// Wires and Components
+		for (Connection connection : Salt.getCircuit().connections()) {
+
+		}
 	}
+
+	private static final double MIN_SCALE = 0.02;
+	private static final double HOME_SCALE = 0.04;
+	private static final double MAX_SCALE = 0.08;
 
 	class MouseMotion extends MouseAdapter {
 		private int lastDragX;
@@ -87,15 +133,12 @@ public class ElectronicsCanvas extends JPanel {
 		private int posY;
 
 		@Override
-		public void mouseClicked(MouseEvent e) {
-			lastDragX = e.getX();
-			lastDragY = e.getY();
-		}
-
-		@Override
 		public void mouseMoved(MouseEvent e) {
 			posX = e.getX();
 			posY = e.getY();
+
+			lastDragX = e.getX();
+			lastDragY = e.getY();
 		}
 
 		@Override

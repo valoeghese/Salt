@@ -19,15 +19,21 @@ import java.util.List;
 import java.util.Map;
 
 public class Salt {
+	private static Circuit circuit;
+
+	public static Circuit getCircuit() {
+		return circuit;
+	}
+
 	public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		Component.registerParser();
 		Position.registerParser();
 
-		Circuit circuit = loadFile(args[0]);
+		loadFile(args[0]);
 
-		System.out.println("Ground node: " + circuit.properties().getGroundNode());
+		System.out.println("Ground node: " + getCircuit().properties().getGroundNode());
 
-		for (Connection connection : circuit.connections()) {
+		for (Connection connection : getCircuit().connections()) {
 			connection.getComponents().forEach(System.out::println);
 		}
 
@@ -53,7 +59,7 @@ public class Salt {
 		frame.setVisible(true);
 	}
 
-	private static Circuit loadFile(String file) {
+	private static void loadFile(String file) {
 		Map<String, Node> nodes;
 		List<Connection> connections;
 		Properties properties;
@@ -70,6 +76,6 @@ public class Salt {
 			throw new UncheckedIOException("Error reading circuit file.", e);
 		}
 
-		return new Circuit(nodes, connections, properties);
+		circuit = new Circuit(nodes, connections, properties);
 	}
 }

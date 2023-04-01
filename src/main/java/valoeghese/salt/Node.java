@@ -9,6 +9,10 @@ public class Node {
 	@SerialisedName("Position")
 	Position position;
 
+	public Position getPosition() {
+		return this.position;
+	}
+
 	@Override
 	public String toString() {
 		return "[Node " + this.name + " @ " + position.toString() + "]";

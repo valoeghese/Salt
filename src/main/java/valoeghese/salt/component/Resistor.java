@@ -1,5 +1,9 @@
 package valoeghese.salt.component;
 
+import valoeghese.salt.Direction;
+
+import java.awt.*;
+
 /**
  * Represents a resistor.
  */
@@ -16,6 +20,11 @@ public class Resistor implements Component {
 
 	public double getResistance() {
 		return this.resistance;
+	}
+
+	@Override
+	public void draw(Graphics2D graphics2D, int x, int y, double scale, Direction direction) {
+
 	}
 
 	@Override
