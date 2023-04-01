@@ -14,6 +14,10 @@ public class Resistor implements Component {
 
 	private final double resistance;
 
+	public double getResistance() {
+		return this.resistance;
+	}
+
 	@Override
 	public String toString() {
 		return "[" + this.resistance + "Ω Resistor]";

@@ -3,8 +3,13 @@ package valoeghese.salt;
 import valoeghese.salt.component.Component;
 import valoeghese.salt.component.Resistor;
 import valoeghese.salt.component.VoltageSource;
-import valoeghese.salt.gui.ElectronicsCanvas;
+import valoeghese.salt.ui.AnalysisMenu;
+import valoeghese.salt.ui.EditMenu;
+import valoeghese.salt.ui.ElectronicsCanvas;
 import valoeghese.salt.io.Database;
+import valoeghese.salt.ui.FileMenu;
+import valoeghese.salt.ui.HelpMenu;
+import valoeghese.salt.ui.ViewMenu;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,19 +46,13 @@ public class Salt {
 		}
 
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
 		JMenuBar bar = new JMenuBar();
-
-		JMenu file = new JMenu("File");
-		bar.add(file);
-
-		JMenu edit = new JMenu("Edit");
-		bar.add(edit);
-
-		JMenu analysis = new JMenu("Analysis");
-		bar.add(analysis);
-
-		JMenu help = new JMenu("Help");
-		bar.add(help);
+		bar.add(new FileMenu());
+		bar.add(new EditMenu());
+		bar.add(new ViewMenu());
+		bar.add(new AnalysisMenu());
+		bar.add(new HelpMenu());
 
 		JFrame frame = new JFrame();
 		frame.setJMenuBar(bar);

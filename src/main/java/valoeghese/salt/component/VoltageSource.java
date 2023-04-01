@@ -14,6 +14,10 @@ public class VoltageSource implements Component {
 
 	private final double voltage;
 
+	public double getVoltage() {
+		return this.voltage;
+	}
+
 	@Override
 	public String toString() {
 		return "[" + this.voltage + "V DC Voltage Source]";
