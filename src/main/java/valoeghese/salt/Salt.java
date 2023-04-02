@@ -9,11 +9,14 @@ import valoeghese.salt.ui.FileMenu;
 import valoeghese.salt.ui.HelpMenu;
 import valoeghese.salt.ui.ViewMenu;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
@@ -60,8 +63,25 @@ public class Salt {
 		frame.setMinimumSize(new Dimension(300, 300));
 		frame.setBounds(screenSize.width / 4, screenSize.height / 4, screenSize.width / 2, screenSize.height / 2);
 		frame.setTitle("Salt");
+		frame.setIconImages(List.of(
+				readImageAsset("icon_256.png"),
+				readImageAsset("icon_128.png"),
+				readImageAsset("icon_64.png"),
+				readImageAsset("icon_32.png")
+		));
+
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+	}
+
+	private static BufferedImage readImageAsset(String path) {
+		try (InputStream stream = Salt.class.getClassLoader().getResourceAsStream("assets/" + path)) {
+			return ImageIO.read(stream);
+		} catch (IOException e) {
+			throw new UncheckedIOException("Error reading image asset " + path, e);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Error reading image asset " + path, e);
+		}
 	}
 
 	private static void loadFile(String file) {
