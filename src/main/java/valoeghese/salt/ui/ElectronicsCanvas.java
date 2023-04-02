@@ -7,9 +7,6 @@ import valoeghese.salt.Salt;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -67,6 +64,38 @@ public class ElectronicsCanvas extends JPanel {
 		}
 	}
 
+	private void scroll(double dx, double dy) {
+		this.xOffset += dx;
+		this.yOffset += dy;
+		this.repaint();
+	}
+
+	private void fillRect(Graphics graphics, double x, double y, double width, double height) {
+		graphics.fillRect(
+				(int) ((x - this.xOffset)/scale),
+				(int) ((y - this.yOffset)/scale),
+				(int) Math.ceil(width/scale),
+				(int) Math.ceil(height/scale));
+	}
+
+	private void drawHorizontalWire(Graphics graphics, double x, double y, double length) {
+		this.fillRect(
+				graphics,
+				length < 0 ? x - length : x,
+				y - WIRE_OFFSET,
+				length,
+				WIRE_WIDTH);
+	}
+
+	private void drawVerticalWire(Graphics graphics, double x, double y, double length) {
+		this.fillRect(
+				graphics,
+				x - WIRE_OFFSET,
+				length < 0 ? y - length : y,
+				WIRE_WIDTH,
+				length);
+	}
+
 	@Override
 	public void paintComponent(Graphics g) {
 		// softer palette than white and black
@@ -101,11 +130,22 @@ public class ElectronicsCanvas extends JPanel {
 			final double nodeSize = 0.125;
 			Position position = node.getPosition();
 
-			g.fillRect(
-					(int) ((position.x() - nodeSize - this.xOffset)/scale),
-					(int) ((position.y() - nodeSize - this.yOffset)/scale),
-					(int) Math.ceil(2.0 * nodeSize/scale),
-					(int) Math.ceil(2.0 * nodeSize/scale));
+			this.fillRect(
+					g,
+					position.x() - nodeSize,
+					position.y() - nodeSize,
+					2.0 * nodeSize,
+					2.0 * nodeSize);
+
+			if (node == Salt.getCircuit().properties().getGroundNode()) {
+				// vertical bar down to top horizontal bar
+				this.drawVerticalWire(g, position.x(), position.y(), 0.5);
+
+				// horizontal bars
+				this.drawHorizontalWire(g, position.x() - 0.5, position.y() + 0.5, 1.0);
+				this.drawHorizontalWire(g, position.x() - 0.333, position.y() + 0.5 + 0.25, 0.667);
+				this.drawHorizontalWire(g, position.x() - 0.167, position.y() + 0.5 + 0.25 * 2, 0.333);
+			}
 		}
 
 		// Wires and Components
@@ -117,6 +157,9 @@ public class ElectronicsCanvas extends JPanel {
 	private static final double MIN_SCALE = 0.02;
 	private static final double HOME_SCALE = 0.04;
 	private static final double MAX_SCALE = 0.08;
+
+	private static final double WIRE_WIDTH = 0.0625;
+	private static final double WIRE_OFFSET = WIRE_WIDTH / 2;
 
 	class MouseMotion extends MouseAdapter {
 		private int lastDragX;
@@ -141,14 +184,18 @@ public class ElectronicsCanvas extends JPanel {
 			lastDragX = e.getX();
 			lastDragY = e.getY();
 
-			ElectronicsCanvas.this.xOffset -= dx * ElectronicsCanvas.this.scale;
-			ElectronicsCanvas.this.yOffset -= dy * ElectronicsCanvas.this.scale;
-			ElectronicsCanvas.this.repaint();
+			ElectronicsCanvas.this.scroll(-dx * ElectronicsCanvas.this.scale, -dy * ElectronicsCanvas.this.scale);
 		}
 
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
-			ElectronicsCanvas.this.zoom(0.05 * e.getPreciseWheelRotation(), e.getX(), e.getY());
+			if (e.isControlDown()) {
+				ElectronicsCanvas.this.zoom(0.05 * e.getPreciseWheelRotation(), e.getX(), e.getY());
+			} else if (e.isShiftDown()) {
+				ElectronicsCanvas.this.scroll(e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale, 0);
+			} else {
+				ElectronicsCanvas.this.scroll(0, e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale);
+			}
 		}
 	}
 }

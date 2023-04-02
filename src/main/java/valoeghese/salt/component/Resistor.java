@@ -23,7 +23,7 @@ public class Resistor implements Component {
 	}
 
 	@Override
-	public void draw(Graphics2D graphics2D, int x, int y, double scale, Direction direction) {
+	public void draw(Graphics graphics, int x, int y, double scale, Direction direction) {
 
 	}
 

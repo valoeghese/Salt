@@ -23,9 +23,9 @@ public class CurrentSource implements Component {
 	}
 
 	@Override
-	public void draw(Graphics2D graphics2D, int x, int y, double scale, Direction direction) {
+	public void draw(Graphics graphics, int x, int y, double scale, Direction direction) {
 		int size = (int) (2 / scale);
-		graphics2D.drawOval(x, y, size, size);
+		graphics.drawOval(x, y, size, size);
 	}
 
 	@Override
