@@ -1,6 +1,7 @@
 package valoeghese.salt.component;
 
 import valoeghese.salt.Direction;
+import valoeghese.salt.Position;
 
 import java.awt.*;
 
@@ -23,8 +24,8 @@ public class Resistor implements Component {
 	}
 
 	@Override
-	public void draw(Graphics graphics, int x, int y, double scale, Direction direction) {
-
+	public void draw(Graphics graphics, Position from, Position to, double scale) {
+		
 	}
 
 	@Override
