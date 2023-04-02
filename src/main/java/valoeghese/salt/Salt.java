@@ -89,7 +89,7 @@ public class Salt {
 		List<Connection> connections;
 		Properties properties;
 
-		try (BufferedReader reader = new BufferedReader(new FileReader("run/voltage_divider.crc"))) {
+		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			Database database = Database.read(reader);
 			nodes = database.readTable("Nodes", Node.class, "Node", String.class);
 

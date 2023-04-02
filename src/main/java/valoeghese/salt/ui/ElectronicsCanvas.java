@@ -1,5 +1,6 @@
 package valoeghese.salt.ui;
 
+import org.jetbrains.annotations.Nullable;
 import valoeghese.salt.Connection;
 import valoeghese.salt.Node;
 import valoeghese.salt.Position;
@@ -81,19 +82,29 @@ public class ElectronicsCanvas extends JPanel {
 	private void drawHorizontalWire(Graphics graphics, double x, double y, double length) {
 		this.fillRect(
 				graphics,
-				length < 0 ? x - length : x,
+				length < 0 ? x + length : x,
 				y - WIRE_OFFSET,
-				length,
-				WIRE_WIDTH);
+				length < 0 ? -length : length,
+				WIRE_THICKNESS);
 	}
 
 	private void drawVerticalWire(Graphics graphics, double x, double y, double length) {
 		this.fillRect(
 				graphics,
 				x - WIRE_OFFSET,
-				length < 0 ? y - length : y,
-				WIRE_WIDTH,
-				length);
+				length < 0 ? y + length : y,
+				WIRE_THICKNESS,
+				length < 0 ? -length : length);
+	}
+
+	private void drawWire(Graphics graphics, Position start, Position end) {
+		if (start.x() == end.x()) {
+			this.drawVerticalWire(graphics, start.x(), start.y(), end.y() - start.y());
+		} else if (start.y() == end.y()) {
+			this.drawHorizontalWire(graphics, start.x(), start.y(), end.x() - start.x());
+		} else {
+			throw new IllegalArgumentException("Cannot draw wire directly along a cardinal direction between " + start + " and " + end);
+		}
 	}
 
 	@Override
@@ -150,7 +161,16 @@ public class ElectronicsCanvas extends JPanel {
 
 		// Wires and Components
 		for (Connection connection : Salt.getCircuit().connections()) {
+			Position start = connection.getNodeA().getPosition();
+			Position end = connection.getNodeB().getPosition();
+			@Nullable Position isct = start.intersect(end, connection.isFlipped());
 
+			if (isct == null) {
+				this.drawWire(g, start, end);
+			} else {
+				this.drawWire(g, start, isct);
+				this.drawWire(g, isct, end);
+			}
 		}
 	}
 
@@ -158,8 +178,8 @@ public class ElectronicsCanvas extends JPanel {
 	private static final double HOME_SCALE = 0.04;
 	private static final double MAX_SCALE = 0.08;
 
-	private static final double WIRE_WIDTH = 0.0625;
-	private static final double WIRE_OFFSET = WIRE_WIDTH / 2;
+	private static final double WIRE_THICKNESS = 0.0625;
+	private static final double WIRE_OFFSET = WIRE_THICKNESS / 2;
 
 	class MouseMotion extends MouseAdapter {
 		private int lastDragX;

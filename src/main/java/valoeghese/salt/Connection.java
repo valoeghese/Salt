@@ -26,7 +26,7 @@ public class Connection {
 	private Node nodeB;
 
 	/**
-	 * Whether this data should be drawn flipped. That is, with the vertical coming out of node A rather than the horizontal.
+	 * Whether this connection should be drawn flipped. That is, with the vertical coming out of node A rather than the horizontal.
 	 */
 	@SerialisedName("Flipped")
 	private boolean flipped;
@@ -47,6 +47,14 @@ public class Connection {
 
 	public Node getNodeB() {
 		return this.nodeB;
+	}
+
+	/**
+	 * Get whether this connection is flipped.
+	 * @return whether this connection should be drawn flipped. That is, with the vertical coming out of node A rather than the horizontal.
+	 */
+	public boolean isFlipped() {
+		return this.flipped;
 	}
 
 	public CurrentSource getCurrentSource() {
