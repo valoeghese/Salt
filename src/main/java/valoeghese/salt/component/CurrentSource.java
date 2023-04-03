@@ -23,8 +23,7 @@ public class CurrentSource implements Component {
 
 	@Override
 	public void draw(Canvas canvas, IntPosition from, IntPosition to, double scale) {
-		int size = (int) (2 / scale);
-		//graphics.drawOval(from.x(), from.y(), size, size);
+		this.drawBaseCircle(canvas, from, to);
 	}
 
 	@Override
