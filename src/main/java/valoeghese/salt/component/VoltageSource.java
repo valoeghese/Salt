@@ -1,8 +1,7 @@
 package valoeghese.salt.component;
 
-import valoeghese.salt.Position;
-
-import java.awt.*;
+import valoeghese.salt.IntPosition;
+import valoeghese.salt.ui.Canvas;
 
 /**
  * Represents a DC voltage source.
@@ -23,7 +22,7 @@ public class VoltageSource implements Component {
 	}
 
 	@Override
-	public void draw(Graphics graphics, Position from, Position to, double scale) {
+	public void draw(Canvas canvas, IntPosition from, IntPosition to, double scale) {
 
 	}
 

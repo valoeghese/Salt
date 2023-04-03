@@ -1,9 +1,7 @@
 package valoeghese.salt.component;
 
-import valoeghese.salt.Direction;
-import valoeghese.salt.Position;
-
-import java.awt.*;
+import valoeghese.salt.IntPosition;
+import valoeghese.salt.ui.Canvas;
 
 /**
  * Represents a DC current source.
@@ -24,9 +22,9 @@ public class CurrentSource implements Component {
 	}
 
 	@Override
-	public void draw(Graphics graphics, Position from, Position to, double scale) {
+	public void draw(Canvas canvas, IntPosition from, IntPosition to, double scale) {
 		int size = (int) (2 / scale);
-		graphics.drawOval(x, y, size, size);
+		//graphics.drawOval(from.x(), from.y(), size, size);
 	}
 
 	@Override

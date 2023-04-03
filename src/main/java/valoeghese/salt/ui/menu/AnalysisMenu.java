@@ -1,4 +1,4 @@
-package valoeghese.salt.ui;
+package valoeghese.salt.ui.menu;
 
 import javax.swing.*;
 

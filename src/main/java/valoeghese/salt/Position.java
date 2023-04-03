@@ -1,51 +1,49 @@
 package valoeghese.salt;
 
-import org.jetbrains.annotations.Nullable;
-import valoeghese.salt.io.Database;
+/**
+ * Represents a position in the circuit.
+ */
+public record Position(double x, double y) {
+	public Position(IntPosition position) {
+		this(position.x(), position.y());
+	}
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-public record Position(int x, int y) {
 	/**
-	 * Get the 'intersection' position along cardinal axes of this position and the other.
-	 * @param other the other position to intersect with.
-	 * @param keepX whether x should be kept from this position. False means y should be kept from this position.'
-	 *                 This allows you to select which intersection point to use of the two possible ones.
-	 * @return the intersection position, which will contain x from one, and y from the other, where 'which is which' is determined by the keepX parameter.
-	 * Will return {@code null} if the points both lie along a line in a cardinal direction.
+	 * Linearly interpolates (lerps) between two positions.
+	 * @param other the other position to lerp to.
+	 * @param progress the progress to lerp by. 0.0 is this position, 1.0 is the other position.
+	 * @return the lerped position.
 	 */
-	public @Nullable Position intersect(Position other, boolean keepX) {
-		if (other.x == this.x || other.y == this.y) {
-			return null;
-		}
+	public Position lerp(Position other, double progress) {
+		double lerpedX = this.x + (other.x - this.x) * progress;
+		double lerpedY = this.y + (other.y - this.y) * progress;
 
-		if (keepX) {
-			return new Position(this.x, other.y);
-		} else {
-			return new Position(other.x, this.y);
-		}
+		return new Position(lerpedX, lerpedY);
+	}
+
+	/**
+	 * Moves towards the other position (from this position) by the given distance.
+	 * @param towards the position to move towards.
+	 * @param distance the distance to move by.
+	 * @return the moved position.
+	 */
+	public Position move(Position towards, double distance) {
+		double dx = towards.x - this.x;
+		double dy = towards.y - this.y;
+
+		// Normalise dx and dy
+		double length = Math.sqrt(dx * dx + dy * dy);
+		dx /= length;
+		dy /= length;
+
+		double resultX = this.x + dx * distance;
+		double resultY = this.y + dy * distance;
+
+		return new Position(resultX, resultY);
 	}
 
 	@Override
 	public String toString() {
-		return "(" + x + ", " + y + ")";
-	}
-
-	private static final Pattern SERIALISED_PATTERN = Pattern.compile("^\\(\\s*(-?\\d+)\\s*,\\s*(-?\\d+)\\s*\\)");
-
-	static void registerParser() {
-		Database.registerParser(Position.class, raw -> {
-			Matcher matcher = SERIALISED_PATTERN.matcher(raw);
-
-			if (matcher.find()) {
-				return new Position(
-						Integer.parseInt(matcher.group(1)),
-						Integer.parseInt(matcher.group(2))
-				);
-			} else {
-				throw new IllegalArgumentException("Invalid position string: " + raw + ". Must match " + SERIALISED_PATTERN.pattern());
-			}
-		});
+		return String.format("(%.6f, %.6f)", this.x, this.y);
 	}
 }

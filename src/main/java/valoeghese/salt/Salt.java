@@ -2,12 +2,12 @@ package valoeghese.salt;
 
 import valoeghese.salt.component.Component;
 import valoeghese.salt.io.Database;
-import valoeghese.salt.ui.AnalysisMenu;
-import valoeghese.salt.ui.EditMenu;
+import valoeghese.salt.ui.menu.AnalysisMenu;
+import valoeghese.salt.ui.menu.EditMenu;
 import valoeghese.salt.ui.ElectronicsCanvas;
-import valoeghese.salt.ui.FileMenu;
-import valoeghese.salt.ui.HelpMenu;
-import valoeghese.salt.ui.ViewMenu;
+import valoeghese.salt.ui.menu.FileMenu;
+import valoeghese.salt.ui.menu.HelpMenu;
+import valoeghese.salt.ui.menu.ViewMenu;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -35,7 +35,7 @@ public class Salt {
 
 	public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		Component.registerParser();
-		Position.registerParser();
+		IntPosition.registerParser();
 
 		loadFile(args[0]);
 

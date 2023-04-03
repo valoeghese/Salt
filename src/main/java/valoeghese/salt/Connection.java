@@ -6,7 +6,6 @@ import valoeghese.salt.component.Resistor;
 import valoeghese.salt.component.VoltageSource;
 import valoeghese.salt.io.SerialisedName;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,7 +36,7 @@ public class Connection {
 	@SerialisedName("Components")
 	private List<Component> components;
 
-	public Collection<Component> getComponents() {
+	public List<Component> getComponents() {
 		return this.components;
 	}
 

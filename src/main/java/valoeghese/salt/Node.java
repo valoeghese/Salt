@@ -7,9 +7,9 @@ public class Node {
 	String name;
 
 	@SerialisedName("Position")
-	Position position;
+	IntPosition position;
 
-	public Position getPosition() {
+	public IntPosition getPosition() {
 		return this.position;
 	}
 

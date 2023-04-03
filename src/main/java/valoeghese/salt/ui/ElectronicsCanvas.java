@@ -3,8 +3,10 @@ package valoeghese.salt.ui;
 import org.jetbrains.annotations.Nullable;
 import valoeghese.salt.Connection;
 import valoeghese.salt.Node;
+import valoeghese.salt.IntPosition;
 import valoeghese.salt.Position;
 import valoeghese.salt.Salt;
+import valoeghese.salt.component.Component;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +28,14 @@ public class ElectronicsCanvas extends JPanel {
 	private double yOffset = 0.0;
 	private double scale = HOME_SCALE;
 	private boolean loaded;
+
+	/**
+	 * Get the scale of this canvas.
+	 * @return the scale.
+	 */
+	public double getScale() {
+		return this.scale;
+	}
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
@@ -71,14 +81,59 @@ public class ElectronicsCanvas extends JPanel {
 		this.repaint();
 	}
 
+	/**
+	 * Fill a rectangle on the screen using sketch coordinates.
+	 * @param graphics the graphics object to draw on
+	 * @param x the x coordinate of the top left corner of the rectangle, in the sketch
+	 * @param y the y coordinate of the top left corner of the rectangle, in the sketch
+	 * @param width the width of the rectangle
+	 * @param height the height of the rectangle
+	 */
 	private void fillRect(Graphics graphics, double x, double y, double width, double height) {
 		graphics.fillRect(
-				(int) ((x - this.xOffset)/scale),
-				(int) ((y - this.yOffset)/scale),
+				sketchXToScreen(x),
+				sketchYToScreen(y),
 				(int) Math.ceil(width/scale),
 				(int) Math.ceil(height/scale));
 	}
 
+	/**
+	 * Converts an x coordinate from the sketch to an x coordinate on the screen.
+	 * @param x the x coordinate in the sketch
+	 * @return the x coordinate on the screen
+	 */
+	private int sketchXToScreen(double x) {
+		return (int) ((x - this.xOffset)/this.scale);
+	}
+
+	/**
+	 * Converts a y coordinate from the sketch to a y coordinate on the screen.
+	 * @param y the y coordinate in the sketch
+	 * @return the y coordinate on the screen
+	 */
+	private int sketchYToScreen(double y) {
+		return (int) ((y - this.yOffset)/this.scale);
+	}
+
+	/**
+	 * Converts a position from the sketch to a position on the screen.
+	 * @param position the position in the sketch
+	 * @return the position on the screen
+	 */
+	private IntPosition sketchToScreen(Position position) {
+		return new IntPosition(
+				this.sketchXToScreen(position.x()),
+				this.sketchYToScreen(position.y())
+		);
+	}
+
+	/**
+	 * Draws a horizontal wire on the screen.
+	 * @param graphics the graphics object to draw on
+	 * @param x the x coordinate of the wire in the sketch
+	 * @param y the y coordinate of the wire in the sketch
+	 * @param length the length of the wire
+	 */
 	private void drawHorizontalWire(Graphics graphics, double x, double y, double length) {
 		this.fillRect(
 				graphics,
@@ -88,6 +143,13 @@ public class ElectronicsCanvas extends JPanel {
 				WIRE_THICKNESS);
 	}
 
+	/**
+	 * Draws a vertical wire on the screen.
+	 * @param graphics the graphics object to draw on
+	 * @param x the x coordinate of the wire in the sketch
+	 * @param y the y coordinate of the wire in the sketch
+	 * @param length the length of the wire
+	 */
 	private void drawVerticalWire(Graphics graphics, double x, double y, double length) {
 		this.fillRect(
 				graphics,
@@ -97,7 +159,25 @@ public class ElectronicsCanvas extends JPanel {
 				length < 0 ? -length : length);
 	}
 
-	private void drawWire(Graphics graphics, Position start, Position end) {
+	/**
+	 * Draws a wire on the screen.
+	 * @param graphics the graphics object to draw on
+	 * @param start the start position of the wire, in the sketch
+	 * @param end the end position of the wire, in the sketch
+	 * @throws IllegalArgumentException if the wire is not directly along a cardinal direction.
+	 */
+	private void drawWire(Graphics graphics, IntPosition start, IntPosition end) throws IllegalArgumentException {
+		this.drawWire(graphics, new Position(start), new Position(end));
+	}
+
+	/**
+	 * Draws a wire on the screen.
+	 * @param graphics the graphics object to draw on
+	 * @param start the start position of the wire, in the sketch
+	 * @param end the end position of the wire, in the sketch
+	 * @throws IllegalArgumentException if the wire is not directly along a cardinal direction.
+	 */
+	private void drawWire(Graphics graphics, Position start, Position end) throws IllegalArgumentException {
 		if (start.x() == end.x()) {
 			this.drawVerticalWire(graphics, start.x(), start.y(), end.y() - start.y());
 		} else if (start.y() == end.y()) {
@@ -109,6 +189,8 @@ public class ElectronicsCanvas extends JPanel {
 
 	@Override
 	public void paintComponent(Graphics g) {
+		Canvas canvas = new Canvas(this, (Graphics2D) g);
+
 		// softer palette than white and black
 		g.setColor(new Color(220, 220, 220));
 		g.fillRect(this.getX(), this.getY(), this.getWidth(), this.getHeight());
@@ -139,7 +221,7 @@ public class ElectronicsCanvas extends JPanel {
 		// Node
 		for (Node node : Salt.getCircuit().nodes().values()) {
 			final double nodeSize = 0.125;
-			Position position = node.getPosition();
+			IntPosition position = node.getPosition();
 
 			this.fillRect(
 					g,
@@ -161,12 +243,41 @@ public class ElectronicsCanvas extends JPanel {
 
 		// Wires and Components
 		for (Connection connection : Salt.getCircuit().connections()) {
-			Position start = connection.getNodeA().getPosition();
-			Position end = connection.getNodeB().getPosition();
-			@Nullable Position isct = start.intersect(end, connection.isFlipped());
+			IntPosition start = connection.getNodeA().getPosition();
+			IntPosition end = connection.getNodeB().getPosition();
+
+			int componentCount = connection.getComponents().size();
+
+			@Nullable IntPosition isct = start.intersect(end, connection.isFlipped());
+			double wireLength = start.distanceManhattan(end);
+			double componentSize = wireLength / (1 + componentCount);
 
 			if (isct == null) {
-				this.drawWire(g, start, end);
+				double totalSpacing = wireLength - componentCount * componentSize;
+				double spacerSize = totalSpacing / (1 + componentCount); // space after each component and at beginning.
+
+				Position lineStart = new Position(start);
+				Position lineEnd = new Position(end);
+
+				// place first spacer
+				this.drawWire(g, lineStart, lineStart.move(lineEnd, spacerSize));
+
+				// iterate over each component, placing it followed by a spacer
+				for (int i = 0; i < componentCount; i++) {
+					Component component = connection.getComponents().get(i);
+
+					IntPosition componentStart = sketchToScreen(
+							lineStart.move(lineEnd, spacerSize + i * (componentSize + spacerSize))
+					);
+
+					Position componentEnd = lineStart.move(lineEnd, (componentSize + spacerSize) * (i + 1));
+					IntPosition componentEndI = this.sketchToScreen(componentEnd);
+
+					Position spacerEnd = lineStart.move(lineEnd, spacerSize + (i + 1) * (componentSize + spacerSize));
+
+					component.draw(canvas, componentStart, componentEndI, this.scale);
+					this.drawWire(g, componentEnd, spacerEnd);
+				}
 			} else {
 				this.drawWire(g, start, isct);
 				this.drawWire(g, isct, end);
@@ -178,7 +289,7 @@ public class ElectronicsCanvas extends JPanel {
 	private static final double HOME_SCALE = 0.04;
 	private static final double MAX_SCALE = 0.08;
 
-	private static final double WIRE_THICKNESS = 0.0625;
+	static final double WIRE_THICKNESS = 0.0625;
 	private static final double WIRE_OFFSET = WIRE_THICKNESS / 2;
 
 	class MouseMotion extends MouseAdapter {
@@ -210,11 +321,11 @@ public class ElectronicsCanvas extends JPanel {
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
 			if (e.isControlDown()) {
-				ElectronicsCanvas.this.zoom(0.05 * e.getPreciseWheelRotation(), e.getX(), e.getY());
+				ElectronicsCanvas.this.zoom(0.01 * e.getPreciseWheelRotation(), e.getX(), e.getY());
 			} else if (e.isShiftDown()) {
-				ElectronicsCanvas.this.scroll(e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale, 0);
+				ElectronicsCanvas.this.scroll(6 * e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale, 0);
 			} else {
-				ElectronicsCanvas.this.scroll(0, e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale);
+				ElectronicsCanvas.this.scroll(0, 6 * e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale);
 			}
 		}
 	}

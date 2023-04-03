@@ -1,9 +1,8 @@
 package valoeghese.salt.component;
 
-import valoeghese.salt.Position;
+import valoeghese.salt.IntPosition;
 import valoeghese.salt.io.Database;
-
-import java.awt.*;
+import valoeghese.salt.ui.Canvas;
 
 /**
  * Represents an electric component.
@@ -11,12 +10,12 @@ import java.awt.*;
 public interface Component {
 	/**
 	 * Draw this component onto the canvas at the specified position and orientation.
-	 * @param graphics the graphics2D for drawing.
-	 * @param from the position on the wire from which to draw this component.
-	 * @param to the position on the wire to which to draw this component.
+	 * @param canvas the canvas upon which to draw.
+	 * @param from the position on the wire from which to draw this component, in screen coordinates.
+	 * @param to the position on the wire to which to draw this component, in screen coordinates.
 	 * @param scale the scale at which this component is being drawn. 1 x or y on the screen is equal to this distance in the actual sketch.
 	 */
-	void draw(Graphics graphics, Position from, Position to, double scale);
+	void draw(Canvas canvas, IntPosition from, IntPosition to, double scale);
 
 	static void registerParser() {
 		Database.registerParser(Component.class, raw -> switch (raw.charAt(0)) {
