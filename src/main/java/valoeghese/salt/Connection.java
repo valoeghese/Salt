@@ -1,5 +1,6 @@
 package valoeghese.salt;
 
+import org.jetbrains.annotations.Nullable;
 import valoeghese.salt.component.Component;
 import valoeghese.salt.component.CurrentSource;
 import valoeghese.salt.component.Resistor;
@@ -60,6 +61,7 @@ public class Connection {
 	 * Get the current source in this connection.
 	 * @return the current source in this connection, or null if there is none.
 	 */
+	@Nullable
 	public CurrentSource getCurrentSource() {
 		for (Component component : this.components) {
 			if (component instanceof CurrentSource cs) {
