@@ -9,8 +9,20 @@ public class Node {
 	@SerialisedName("Position")
 	IntPosition position;
 
+	/**
+	 * Get the position of this node in the circuit, in sketch coordinates.
+	 * @return the position of this node in the circuit.
+	 */
 	public IntPosition getPosition() {
 		return this.position;
+	}
+
+	/**
+	 * Get the name of this node.
+	 * @return the name of this node.
+	 */
+	public String getName() {
+		return this.name;
 	}
 
 	@Override

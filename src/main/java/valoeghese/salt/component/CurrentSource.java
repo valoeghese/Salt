@@ -6,7 +6,7 @@ import valoeghese.salt.ui.Canvas;
 /**
  * Represents a DC current source.
  */
-public class CurrentSource implements Component {
+public class CurrentSource extends Component {
 	/**
 	 * Construct a DC voltage source with the given current in its branch.
 	 * @param current the current of this current source.

@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.util.List;
 
 public class ElectronicsCanvas extends JPanel {
 	public ElectronicsCanvas() {
@@ -231,13 +232,104 @@ public class ElectronicsCanvas extends JPanel {
 					2.0 * nodeSize);
 
 			if (node == Salt.getCircuit().properties().getGroundNode()) {
-				// vertical bar down to top horizontal bar
-				this.drawVerticalWire(g, position.x(), position.y(), 0.5);
+				// compute occupied directions of ground node (using bits 0x4 for up, 0x2 for right, 0x1 for down)
+				final int UP = 0x4;
+				final int RIGHT = 0x2;
+				final int DOWN = 0x1;
+				int occupiedDirections = 0;
 
-				// horizontal bars
-				this.drawHorizontalWire(g, position.x() - 0.5, position.y() + 0.5, 1.0);
-				this.drawHorizontalWire(g, position.x() - 0.333, position.y() + 0.5 + 0.25, 0.667);
-				this.drawHorizontalWire(g, position.x() - 0.167, position.y() + 0.5 + 0.25 * 2, 0.333);
+				for (Connection connection : Salt.getCircuit().connections()) {
+					Node nodeA = connection.getNodeA();
+					Node nodeB = connection.getNodeB();
+
+					// check if connection is from the node
+					boolean fromNode = nodeA == node;
+
+					if (fromNode || nodeB == node) {
+						// if fromNode, comes out horizontally first. Otherwise (where it will be into the node), comes out vertically first
+						// 'flipped' indicates this should be reversed
+						// Though if they are only vertical from one another the connection will only be vertical
+						boolean horizontal = (fromNode ^ connection.isFlipped()) && !(nodeA.getPosition().x() == nodeB.getPosition().x());
+
+						if (horizontal) {
+							// find dx from this node.
+							// first position of B relative to A
+							int dx = nodeB.getPosition().x() - nodeA.getPosition().x();
+
+							// if our node is actually node B, flip the direction
+							if (!fromNode) {
+								dx = -dx;
+							}
+
+							// if dx is positive, it's to the right
+							if (dx > 0) {
+								occupiedDirections |= RIGHT;
+							}
+
+							// otherwise it's to the left
+							// we don't care about the case that it's to the left, because that's our default direction
+						}
+						else {
+							// find dy from this node.
+							// first position of B relative to A
+							int dy = nodeB.getPosition().y() - nodeA.getPosition().y();
+
+							// if our node is actually node B, flip the direction
+							if (!fromNode) {
+								dy = -dy;
+							}
+
+							// if dy is positive, it's down (remember positive y is down)
+							if (dy > 0) {
+								occupiedDirections |= DOWN;
+							}
+							// otherwise it's up
+							else {
+								occupiedDirections |= UP;
+							}
+						}
+					}
+				}
+
+				// bars for ground node
+				// pick a non-occupied node.
+				// Prefer down, then right, then up, then left (default if all occupied)
+				if ((occupiedDirections & DOWN) == 0) {
+					// vertical bar down to top horizontal bar
+					this.drawVerticalWire(g, position.x(), position.y(), 0.5);
+
+					// three bars
+					this.drawHorizontalWire(g, position.x() - 0.5, position.y() + 0.5, 1.0);
+					this.drawHorizontalWire(g, position.x() - 0.333, position.y() + 0.5 + 0.25, 0.667);
+					this.drawHorizontalWire(g, position.x() - 0.167, position.y() + 0.5 + 0.25 * 2, 0.333);
+				}
+				else if ((occupiedDirections & RIGHT) == 0) {
+					// horizontal bar to right vertical bar
+					this.drawHorizontalWire(g, position.x(), position.y(), 0.5);
+
+					// three bars
+					this.drawVerticalWire(g, position.x() + 0.5, position.y() - 0.5, 1.0);
+					this.drawVerticalWire(g, position.x() + 0.5 + 0.25, position.y() - 0.333, 0.667);
+					this.drawVerticalWire(g, position.x() + 0.5 + 0.25 * 2, position.y() - 0.167, 0.333);
+				}
+				else if ((occupiedDirections & UP) == 0) {
+					// vertical bar up to bottom horizontal bar
+					this.drawVerticalWire(g, position.x(), position.y(), -0.5);
+
+					// three bars
+					this.drawHorizontalWire(g, position.x() - 0.5, position.y() - 0.5, 1.0);
+					this.drawHorizontalWire(g, position.x() - 0.333, position.y() - 0.5 - 0.25, 0.667);
+					this.drawHorizontalWire(g, position.x() - 0.167, position.y() - 0.5 - 0.25 * 2, 0.333);
+				}
+				else {
+					// horizontal bar to left vertical bar
+					this.drawHorizontalWire(g, position.x(), position.y(), -0.5);
+
+					// three bars
+					this.drawVerticalWire(g, position.x() - 0.5, position.y() - 0.5, 1.0);
+					this.drawVerticalWire(g, position.x() - 0.5 - 0.25, position.y() - 0.333, 0.667);
+					this.drawVerticalWire(g, position.x() - 0.5 - 0.25 * 2, position.y() - 0.167, 0.333);
+				}
 			}
 		}
 
@@ -250,38 +342,50 @@ public class ElectronicsCanvas extends JPanel {
 
 			@Nullable IntPosition isct = start.intersect(end, connection.isFlipped());
 			double wireLength = start.distanceManhattan(end);
-			double componentSize = wireLength / (1 + componentCount);
+			double componentSize = Math.min(wireLength / (1 + componentCount), 1.25);
 
+			// draw components and wires
 			if (isct == null) {
-				double totalSpacing = wireLength - componentCount * componentSize;
-				double spacerSize = totalSpacing / (1 + componentCount); // space after each component and at beginning.
-
-				Position lineStart = new Position(start);
-				Position lineEnd = new Position(end);
-
-				// place first spacer
-				this.drawWire(g, lineStart, lineStart.move(lineEnd, spacerSize));
-
-				// iterate over each component, placing it followed by a spacer
-				for (int i = 0; i < componentCount; i++) {
-					Component component = connection.getComponents().get(i);
-
-					IntPosition componentStart = sketchToScreen(
-							lineStart.move(lineEnd, spacerSize + i * (componentSize + spacerSize))
-					);
-
-					Position componentEnd = lineStart.move(lineEnd, (componentSize + spacerSize) * (i + 1));
-					IntPosition componentEndI = this.sketchToScreen(componentEnd);
-
-					Position spacerEnd = lineStart.move(lineEnd, spacerSize + (i + 1) * (componentSize + spacerSize));
-
-					component.draw(canvas, componentStart, componentEndI, this.scale);
-					this.drawWire(g, componentEnd, spacerEnd);
-				}
+				this.drawComponents(canvas, start, end, connection.getComponents(), 0, componentCount, componentSize);
 			} else {
-				this.drawWire(g, start, isct);
-				this.drawWire(g, isct, end);
+				double firstStretchLength = start.distanceManhattan(isct);
+				double secondStretchLength = end.distanceManhattan(isct);
+
+				int componentsOnFirstStretch = (int) (componentCount * firstStretchLength / (firstStretchLength + secondStretchLength));
+				int componentsOnSecondStretch = componentCount - componentsOnFirstStretch;
+
+				this.drawComponents(canvas, start, isct, connection.getComponents(), 0, componentsOnFirstStretch, componentSize);
+				this.drawComponents(canvas, isct, end, connection.getComponents(), componentsOnFirstStretch, componentsOnSecondStretch, componentSize);
 			}
+		}
+	}
+
+	private void drawComponents(Canvas canvas, IntPosition start, IntPosition end, List<Component> components, int from, int count, double componentSize) {
+		double wireLength = start.distanceManhattan(end);
+		double totalSpacing = wireLength - count * componentSize;
+		double spacerSize = totalSpacing / (1 + count); // space after each component and at beginning.
+
+		Position lineStart = new Position(start);
+		Position lineEnd = new Position(end);
+
+		// place first spacer
+		this.drawWire(canvas.graphics(), lineStart, lineStart.move(lineEnd, spacerSize));
+
+		// iterate over each component, placing it followed by a spacer
+		for (int i = 0; i < count; i++) {
+			Component component = components.get(i + from);
+
+			IntPosition componentStart = sketchToScreen(
+					lineStart.move(lineEnd, spacerSize + i * (componentSize + spacerSize))
+			);
+
+			Position componentEnd = lineStart.move(lineEnd, (componentSize + spacerSize) * (i + 1));
+			IntPosition componentEndI = this.sketchToScreen(componentEnd);
+
+			Position spacerEnd = lineStart.move(lineEnd, spacerSize + (i + 1) * (componentSize + spacerSize));
+
+			component.draw(canvas, componentStart, componentEndI, this.scale);
+			this.drawWire(canvas.graphics(), componentEnd, spacerEnd);
 		}
 	}
 

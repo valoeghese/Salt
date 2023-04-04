@@ -56,6 +56,10 @@ public class Connection {
 		return this.flipped;
 	}
 
+	/**
+	 * Get the current source in this connection.
+	 * @return the current source in this connection, or null if there is none.
+	 */
 	public CurrentSource getCurrentSource() {
 		for (Component component : this.components) {
 			if (component instanceof CurrentSource cs) {

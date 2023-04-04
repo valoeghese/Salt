@@ -6,7 +6,7 @@ import valoeghese.salt.ui.Canvas;
 /**
  * Represents a resistor.
  */
-public class Resistor implements Component {
+public class Resistor extends Component {
 	/**
 	 * Constructs a resistor with the given resistance.
 	 * @param resistance the resistance, in ohms.

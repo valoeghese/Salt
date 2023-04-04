@@ -6,7 +6,7 @@ import valoeghese.salt.ui.Canvas;
 /**
  * Represents a DC voltage source.
  */
-public class VoltageSource implements Component {
+public class VoltageSource extends Component {
 	/**
 	 * Construct a DC voltage source with the given voltage across its terminals.
 	 * @param voltage the voltage of this voltage source.

@@ -14,6 +14,10 @@ public class Canvas {
 	private final ElectronicsCanvas trueCanvas;
 	private final Graphics2D parent;
 
+	Graphics graphics() {
+		return this.parent;
+	}
+
 	public void drawEllipse(int x, int y, int width, int height) {
 		int screenThickness = this.getScreenThickness();
 		this.parent.setStroke(new BasicStroke(screenThickness));
