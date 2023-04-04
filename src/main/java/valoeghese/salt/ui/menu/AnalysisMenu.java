@@ -1,5 +1,6 @@
 package valoeghese.salt.ui.menu;
 
+import org.jetbrains.annotations.Nullable;
 import valoeghese.salt.Connection;
 import valoeghese.salt.LinearAlgebra;
 import valoeghese.salt.Node;
@@ -10,10 +11,11 @@ import valoeghese.salt.utils.HashBiMap;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.BiConsumer;
 
 public class AnalysisMenu extends JMenu {
 	public AnalysisMenu() {
@@ -24,14 +26,87 @@ public class AnalysisMenu extends JMenu {
 
 		analyseNodes.addActionListener(e -> {
 			System.out.println("Simplifying Circuit... ");
-			System.out.println("> Equivalent Nodes (NOT IMPLEMENTED)");
+
+			System.out.println("> Equivalent Nodes and Supernodes");
+
+			// map that contains nodes that should be analysed as an equivalent to another node with only a voltage difference.
+			// these will be handled like a supernode.
+			Map<Node, SuperNode> superNodes = new HashMap<>();
+
+			// iterate through connections
+			for (Connection connection : Salt.getCircuit().connections()) {
+				if (connection.getCurrentSource() == null && connection.getResistance() == 0) {
+					// The nodes are equivalent with only a voltage difference
+
+					// As there is no other components, this is the voltage of B as seen from A. That is, Vb - Va
+					double voltageDiff = connection.getVoltageSourceVoltage();
+
+					Node nodeA = connection.getNodeA();
+					Node nodeB = connection.getNodeB();
+
+					// check if there's an existing supernode(s) for these nodes
+					@Nullable SuperNode superNodeA = superNodes.get(nodeA);
+					@Nullable SuperNode superNodeB = superNodes.get(nodeB);
+
+					if (superNodeA == null && superNodeB == null) {
+						// create new supernode
+						SuperNode superNode = new SuperNode(nodeA);
+						superNode.addNode(nodeB, voltageDiff);
+
+						// add into the map
+						superNodes.put(nodeA, superNode);
+						superNodes.put(nodeB, superNode);
+					} else if (superNodeA == null) {
+						// add nodeA to supernodeB
+						double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeB);
+						superNodeB.addNode(nodeA, nodeBVoltageRelativeToHead - voltageDiff);
+
+						// add into the map
+						superNodes.put(nodeA, superNodeB);
+					} else if (superNodeB == null) {
+						// add nodeB to supernodeA
+						double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
+						superNodeA.addNode(nodeB, nodeAVoltageRelativeToHead + voltageDiff);
+					} else {
+						// merge supernodes
+						double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
+						double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeB);
+
+						double headDifference = nodeAVoltageRelativeToHead - nodeBVoltageRelativeToHead + voltageDiff;
+
+						superNodeA.addAll(superNodeB, headDifference);
+
+						// move nodes from superNodeB to superNodeA
+						superNodeB.forEach((node, relVoltage) -> superNodes.put(node, superNodeA));
+					}
+				} else {
+					// otherwise, put any independent nodes in a supernode
+
+					Node nodeA = connection.getNodeA();
+					Node nodeB = connection.getNodeB();
+
+					@Nullable SuperNode superNodeA = superNodes.get(nodeA);
+					@Nullable SuperNode superNodeB = superNodes.get(nodeB);
+
+					if (superNodeA == null) {
+						superNodeA = new SuperNode(nodeA);
+						superNodes.put(nodeA, superNodeA);
+					}
+
+					if (superNodeB == null) {
+						superNodeB = new SuperNode(nodeB);
+						superNodes.put(nodeB, superNodeB);
+					}
+				}
+			}
+
 			System.out.println("> Non-Important Nodes (NOT IMPLEMENTED)");
 
 			System.out.println("Analysing Node Voltages");
 			System.out.println("> Computing Coefficient Matrix and Vector of Constants");
 
-			BiMap<Integer, Node> nodes = AnalysisMenu.this.createNodeIdMap();
-			SystemOfEquations system = AnalysisMenu.this.computeSystemOfEquations(nodes);
+			BiMap<Integer, Node> nodes = AnalysisMenu.this.createNodeIdMap(superNodes.keySet());
+			SystemOfEquations system = AnalysisMenu.this.computeSystemOfEquations(nodes, superNodes);
 
 			System.out.println("> Solving Matrix");
 
@@ -47,13 +122,13 @@ public class AnalysisMenu extends JMenu {
 		this.add(analyseNodes);
 	}
 
-	private BiMap<Integer, Node> createNodeIdMap() {
+	private BiMap<Integer, Node> createNodeIdMap(Collection<Node> nodes) {
 		// create temporary ids for each node
 		Map<String, Integer> nodeIds = new HashMap<>();
 		int id = 0;
 		final Node groundNode = Salt.getCircuit().properties().getGroundNode();
 
-		for (Node node : Salt.getCircuit().nodes().values()) {
+		for (Node node : nodes) {
 			// skip the ground node
 			if (node.equals(groundNode)) {
 				continue;
@@ -70,7 +145,7 @@ public class AnalysisMenu extends JMenu {
 				.collect(HashBiMap.collectToHashBiMap(e -> nodeIds.get(e.getKey()), Map.Entry::getValue));
 	}
 
-	private SystemOfEquations computeSystemOfEquations(BiMap<Integer, Node> nodes) {
+	private SystemOfEquations computeSystemOfEquations(BiMap<Integer, Node> nodes, Map<Node, SuperNode> superNodes) {
 		List<Connection> connections = Salt.getCircuit().connections();
 		int nodeCount = nodes.size();
 
@@ -88,6 +163,8 @@ public class AnalysisMenu extends JMenu {
 			Node node = nodes.getValue(nodeId);
 
 			for (Connection connection : connections) {
+				// convert dependent nodes to their head nodes
+
 				// ensure this connection connects to the node being analysed
 				if (!connection.getNodeA().equals(node) && !connection.getNodeB().equals(node)) {
 					continue;
@@ -167,6 +244,81 @@ public class AnalysisMenu extends JMenu {
 			}
 
 			return builder.toString();
+		}
+	}
+
+	/**
+	 * Represents a collection of nodes which are related all only by a voltage source(s) at most.
+	 * One of these nodes is arbitrarily picked as the 'head' to be solved for; other voltages can then be determined
+	 * later from that node.
+	 */
+	private static class SuperNode {
+		public SuperNode(Node head) {
+			this.head = head;
+			this.dependents = new HashMap<>();
+		}
+
+		private final Node head;
+
+		/**
+		 * A map of other nodes against the difference between their voltage and the head voltage.
+		 */
+		private final Map<Node, Double> dependents;
+
+		public Node getHead() {
+			return this.head;
+		}
+
+		public boolean hasNode(Node node) {
+			return this.head.equals(node) || this.dependents.containsKey(node);
+		}
+
+		public double getVoltageRelativeToHead(Node node) {
+			if (this.head.equals(node)) {
+				return 0.0;
+			}
+
+			return this.dependents.get(node);
+		}
+
+		/**
+		 * Adds the given node to thhis supernode with the given voltage difference.
+		 * @param node the node to add.
+		 * @param voltageDifference the difference between the voltages of the node and the head. That is, the voltage of this node relative to the head.
+		 */
+		public void addNode(Node node, double voltageDifference) {
+			if (this.head.equals(node)) {
+				return;
+			}
+
+			this.dependents.put(node, voltageDifference);
+		}
+
+		/**
+		 * Iterate over each node in this supernode, along with the voltage difference between that node and the head.
+		 * @param callback the callback to run for each node.
+		 */
+		public void forEach(BiConsumer<Node, Double> callback) {
+			callback.accept(this.head, 0.0);
+			this.dependents.forEach(callback);
+		}
+
+		/**
+		 * Adds all the nodes from another supernode into this supernode, with the heads having the given voltage
+		 * difference.
+		 * @param other the other supernode from which to add nodes.
+		 * @param headDifference the difference in the voltage between the heads of the two supernodes.
+		 */
+		public void addAll(SuperNode other, double headDifference) {
+			if (this == other) {
+				return;
+			}
+
+			// add all the other nodes from the other supernode
+			other.forEach((node, voltage) -> this.dependents.put(node, voltage + headDifference));
+
+			// add the other supernode's head to this supernode
+			this.dependents.put(other.head, headDifference);
 		}
 	}
 }
