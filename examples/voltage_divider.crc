@@ -1,0 +1,10 @@
+Properties    Key Value
+	GroundNode	N1
+
+Nodes	Node	Position
+	N1	(0,0)
+	N2	(4,4)
+
+Connections	NodeA	NodeB	Flipped    Components
+	N1	N2	False	V5.0	R3.0
+	N2	N1	False	R2.0
