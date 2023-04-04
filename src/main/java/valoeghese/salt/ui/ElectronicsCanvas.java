@@ -427,9 +427,9 @@ public class ElectronicsCanvas extends JPanel {
 			if (e.isControlDown()) {
 				ElectronicsCanvas.this.zoom(0.01 * e.getPreciseWheelRotation(), e.getX(), e.getY());
 			} else if (e.isShiftDown()) {
-				ElectronicsCanvas.this.scroll(6 * e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale, 0);
+				ElectronicsCanvas.this.scroll(10 * e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale, 0);
 			} else {
-				ElectronicsCanvas.this.scroll(0, 6 * e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale);
+				ElectronicsCanvas.this.scroll(0, 10 * e.getPreciseWheelRotation() * ElectronicsCanvas.this.scale);
 			}
 		}
 	}
