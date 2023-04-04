@@ -20,6 +20,19 @@ public record IntPosition(int x, int y) {
 	}
 
 	/**
+	 * Linearly interpolates (lerps) between two int positions.
+			* @param other the other position to lerp to.
+	 * @param progress the progress to lerp by. 0.0 is this position, 1.0 is the other position.
+			* @return the lerped position.
+	 */
+	public IntPosition lerp(IntPosition other, double progress) {
+		double lerpedX = this.x + (other.x - this.x) * progress;
+		double lerpedY = this.y + (other.y - this.y) * progress;
+
+		return new IntPosition((int) lerpedX, (int) lerpedY);
+	}
+
+	/**
 	 * Get the 'intersection' position along cardinal axes of this position and the other.
 	 * @param other the other position to intersect with.
 	 * @param keepX whether x should be kept from this position. False means y should be kept from this position.'

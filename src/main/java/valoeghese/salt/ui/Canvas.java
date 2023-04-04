@@ -1,5 +1,7 @@
 package valoeghese.salt.ui;
 
+import valoeghese.salt.IntPosition;
+
 import java.awt.*;
 
 /**
@@ -91,19 +93,12 @@ public class Canvas {
 		int screenThickness = this.getScreenThickness();
 		this.parent.setStroke(new BasicStroke(screenThickness));
 
-		// handle cases that dx and dy are negative
-		if (dx < 0) {
-			x += dx;
-			dx = -dx;
-		}
-
-		if (dy < 0) {
-			y += dy;
-			dy = -dy;
-		}
-
 		// draw the line
 		this.parent.drawLine(x, y, x + dx, y + dy);
+	}
+
+	public void drawLine(IntPosition from, IntPosition to) {
+		this.parent.drawLine(from.x(), from.y(), to.x(), to.y());
 	}
 
 	private int getScreenThickness() {
