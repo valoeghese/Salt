@@ -7,6 +7,7 @@ import valoeghese.salt.IntPosition;
 import valoeghese.salt.Position;
 import valoeghese.salt.Salt;
 import valoeghese.salt.component.Component;
+import valoeghese.salt.utils.Units;
 
 import javax.swing.*;
 import java.awt.*;
@@ -129,6 +130,17 @@ public class ElectronicsCanvas extends JPanel {
 	}
 
 	/**
+	 * Draws centered text on the screen at the given position.
+	 * @param position the position of the centre of text in the sketch
+	 */
+	private void drawCenteredText(Graphics g, Position position, String text) {
+		FontMetrics metrics = g.getFontMetrics();
+		int x = this.sketchXToScreen(position.x());
+		int y = this.sketchYToScreen(position.y());
+		g.drawString(text, x - metrics.stringWidth(text)/2, y + metrics.getHeight()/4);
+	}
+
+	/**
 	 * Draws a horizontal wire on the screen.
 	 * @param graphics the graphics object to draw on
 	 * @param x the x coordinate of the wire in the sketch
@@ -188,6 +200,8 @@ public class ElectronicsCanvas extends JPanel {
 		}
 	}
 
+	private static final Color DOTS_COLOUR = new Color(30, 30, 30);
+
 	@Override
 	public void paintComponent(Graphics g) {
 		Canvas canvas = new Canvas(this, (Graphics2D) g);
@@ -197,7 +211,7 @@ public class ElectronicsCanvas extends JPanel {
 		g.fillRect(this.getX(), this.getY(), this.getWidth(), this.getHeight());
 
 		// Dots
-		g.setColor(new Color(30, 30, 30));
+		g.setColor(DOTS_COLOUR);
 
 		for (int x = this.getX(); x < this.getWidth(); x++) {
 			double sketchX = x * scale + this.xOffset;
@@ -219,7 +233,7 @@ public class ElectronicsCanvas extends JPanel {
 
 		// Draw circuit onto the board
 
-		// Node
+		// Nodes
 		for (Node node : Salt.getCircuit().nodes().values()) {
 			final double nodeSize = 0.125;
 			IntPosition position = node.getPosition();
@@ -331,6 +345,13 @@ public class ElectronicsCanvas extends JPanel {
 					this.drawVerticalWire(g, position.x() - 0.5 - 0.25 * 2, position.y() - 0.167, 0.333);
 				}
 			}
+
+			// draw voltage string
+			node.getDisplayVoltage().ifPresent(voltage -> {
+				g.setColor(Color.RED);
+				this.drawCenteredText(g, new Position(node.getPosition()), Units.getUnitString(voltage, "V"));
+				g.setColor(DOTS_COLOUR);
+			});
 		}
 
 		// Wires and Components

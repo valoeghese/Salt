@@ -38,6 +38,7 @@ public class HashBiMap<K, V> implements BiMap<K, V> {
 	public HashBiMap(BiMap<K, V> biMap) {
 		biMap.forEach(this::put);
 	}
+
 	private final HashMap<K, V> map = new HashMap<>();
 	private final HashMap<V, K> reverseMap = new HashMap<>();
 

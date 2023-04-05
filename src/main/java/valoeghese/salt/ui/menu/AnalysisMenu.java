@@ -33,86 +33,7 @@ public class AnalysisMenu extends JMenu {
 
 			// map that contains nodes that should be analysed as an equivalent to another node with only a voltage difference.
 			// these will be handled like a supernode.
-			Map<Node, SuperNode> superNodes = new HashMap<>();
-
-			// iterate through connections
-			for (Connection connection : Salt.getCircuit().connections()) {
-				if (connection.getCurrentSource() == null && connection.getResistance() == 0) {
-					// The nodes are equivalent with only a voltage difference
-
-					// As there is no other components, this is the voltage of B as seen from A. That is, Vb - Va
-					double voltageDiff = connection.getVoltageSourceVoltage();
-
-					Node nodeA = connection.getNodeA();
-					Node nodeB = connection.getNodeB();
-
-					// check if there's an existing supernode(s) for these nodes
-					@Nullable SuperNode superNodeA = superNodes.get(nodeA);
-					@Nullable SuperNode superNodeB = superNodes.get(nodeB);
-
-					if (superNodeA == null && superNodeB == null) {
-						// create new supernode
-						SuperNode superNode = new SuperNode(nodeA);
-						superNode.addNode(nodeB, voltageDiff);
-
-						// add into the map
-						superNodes.put(nodeA, superNode);
-						superNodes.put(nodeB, superNode);
-					} else if (superNodeA == null) {
-						// add nodeA to supernodeB
-						double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeB);
-						superNodeB.addNode(nodeA, nodeBVoltageRelativeToHead - voltageDiff);
-
-						// add into the map
-						superNodes.put(nodeA, superNodeB);
-					} else if (superNodeB == null) {
-						// add nodeB to supernodeA
-						double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
-						superNodeA.addNode(nodeB, nodeAVoltageRelativeToHead + voltageDiff);
-
-						// add into the map
-						superNodes.put(nodeB, superNodeA);
-					} else {
-						// merge supernodes
-						double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
-						double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeB);
-
-						double headDifference = nodeAVoltageRelativeToHead - nodeBVoltageRelativeToHead + voltageDiff;
-
-						superNodeA.addAll(superNodeB, headDifference);
-
-						// move nodes from superNodeB to superNodeA
-						superNodeB.forEach((node, relVoltage) -> superNodes.put(node, superNodeA));
-					}
-				} else {
-					// otherwise, put any independent nodes in a supernode
-
-					Node nodeA = connection.getNodeA();
-					Node nodeB = connection.getNodeB();
-
-					@Nullable SuperNode superNodeA = superNodes.get(nodeA);
-					@Nullable SuperNode superNodeB = superNodes.get(nodeB);
-
-					if (superNodeA == null) {
-						superNodeA = new SuperNode(nodeA);
-						superNodes.put(nodeA, superNodeA);
-					}
-
-					if (superNodeB == null) {
-						superNodeB = new SuperNode(nodeB);
-						superNodes.put(nodeB, superNodeB);
-					}
-				}
-			}
-
-			// rearrange ground supernode
-			SuperNode groundSupernode = superNodes.get(Salt.getCircuit().properties().getGroundNode());
-
-			if (!groundSupernode.isGround()) {
-				SuperNode trueGroundSupernode = groundSupernode.rearrange();
-
-				groundSupernode.forEach((node, relVoltage) -> superNodes.put(node, trueGroundSupernode));
-			}
+			Map<Node, SuperNode> superNodes = this.createSuperNodes();
 
 			System.out.println("Super nodes:");
 			superNodes.values().stream().distinct().forEach(sn -> System.out.println("-\t" + sn));
@@ -139,6 +60,95 @@ public class AnalysisMenu extends JMenu {
 		});
 
 		this.add(analyseNodes);
+	}
+
+	/**
+	 * Create supernodes for the circuit.
+	 * @return a map from nodes to the supernodes they are part of.
+	 */
+	private Map<Node, SuperNode> createSuperNodes() {
+		Map<Node, SuperNode> superNodes = new HashMap<>();
+
+		// iterate through connections
+		for (Connection connection : Salt.getCircuit().connections()) {
+			if (connection.getCurrentSource() == null && connection.getResistance() == 0) {
+				// The nodes are equivalent with only a voltage difference
+
+				// As there is no other components, this is the voltage of B as seen from A. That is, Vb - Va
+				double voltageDiff = connection.getVoltageSourceVoltage();
+
+				Node nodeA = connection.getNodeA();
+				Node nodeB = connection.getNodeB();
+
+				// check if there's an existing supernode(s) for these nodes
+				@Nullable SuperNode superNodeA = superNodes.get(nodeA);
+				@Nullable SuperNode superNodeB = superNodes.get(nodeB);
+
+				if (superNodeA == null && superNodeB == null) {
+					// create new supernode
+					SuperNode superNode = new SuperNode(nodeA);
+					superNode.addNode(nodeB, voltageDiff);
+
+					// add into the map
+					superNodes.put(nodeA, superNode);
+					superNodes.put(nodeB, superNode);
+				} else if (superNodeA == null) {
+					// add nodeA to supernodeB
+					double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeB);
+					superNodeB.addNode(nodeA, nodeBVoltageRelativeToHead - voltageDiff);
+
+					// add into the map
+					superNodes.put(nodeA, superNodeB);
+				} else if (superNodeB == null) {
+					// add nodeB to supernodeA
+					double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
+					superNodeA.addNode(nodeB, nodeAVoltageRelativeToHead + voltageDiff);
+
+					// add into the map
+					superNodes.put(nodeB, superNodeA);
+				} else {
+					// merge supernodes
+					double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
+					double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeB);
+
+					double headDifference = nodeAVoltageRelativeToHead - nodeBVoltageRelativeToHead + voltageDiff;
+
+					superNodeA.addAll(superNodeB, headDifference);
+
+					// move nodes from superNodeB to superNodeA
+					superNodeB.forEach((node, relVoltage) -> superNodes.put(node, superNodeA));
+				}
+			} else {
+				// otherwise, put any independent nodes in a supernode
+
+				Node nodeA = connection.getNodeA();
+				Node nodeB = connection.getNodeB();
+
+				@Nullable SuperNode superNodeA = superNodes.get(nodeA);
+				@Nullable SuperNode superNodeB = superNodes.get(nodeB);
+
+				if (superNodeA == null) {
+					superNodeA = new SuperNode(nodeA);
+					superNodes.put(nodeA, superNodeA);
+				}
+
+				if (superNodeB == null) {
+					superNodeB = new SuperNode(nodeB);
+					superNodes.put(nodeB, superNodeB);
+				}
+			}
+		}
+
+		// rearrange ground supernode
+		SuperNode groundSupernode = superNodes.get(Salt.getCircuit().properties().getGroundNode());
+
+		if (!groundSupernode.isGround()) {
+			SuperNode trueGroundSupernode = groundSupernode.rearrange();
+
+			groundSupernode.forEach((node, relVoltage) -> superNodes.put(node, trueGroundSupernode));
+		}
+
+		return superNodes;
 	}
 
 	private BiMap<Integer, Node> createNodeIdMap(Collection<Node> heads) {
