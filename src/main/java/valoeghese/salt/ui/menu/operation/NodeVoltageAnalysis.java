@@ -6,7 +6,6 @@ import valoeghese.salt.LinearAlgebra;
 import valoeghese.salt.Node;
 import valoeghese.salt.Salt;
 import valoeghese.salt.component.CurrentSource;
-import valoeghese.salt.ui.menu.AnalysisMenu;
 import valoeghese.salt.utils.BiMap;
 import valoeghese.salt.utils.HashBiMap;
 
@@ -56,7 +55,7 @@ public class NodeVoltageAnalysis extends JMenuItem {
 			}
 
 			// update screen
-			Salt.getCanvas().repaint();
+			Salt.refresh();
 		});
 	}
 

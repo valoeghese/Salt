@@ -29,6 +29,13 @@ public class Salt {
 		return circuit;
 	}
 
+	/**
+	 * Refresh the display.
+	 */
+	public static void refresh() {
+		getCanvas().repaint();
+	}
+
 	public static ElectronicsCanvas getCanvas() {
 		return canvas;
 	}
