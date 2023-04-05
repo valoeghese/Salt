@@ -11,11 +11,13 @@ import valoeghese.salt.utils.HashBiMap;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public class AnalysisMenu extends JMenu {
 	public AnalysisMenu() {
@@ -100,6 +102,15 @@ public class AnalysisMenu extends JMenu {
 				}
 			}
 
+			// rearrange ground supernode
+			SuperNode groundSupernode = superNodes.get(Salt.getCircuit().properties().getGroundNode());
+
+			if (!groundSupernode.isGround()) {
+				SuperNode trueGroundSupernode = groundSupernode.rearrange();
+
+				groundSupernode.forEach((node, relVoltage) -> superNodes.put(node, trueGroundSupernode));
+			}
+
 			System.out.println("> Non-Important Nodes (NOT IMPLEMENTED)");
 
 			System.out.println("Analysing Node Voltages");
@@ -163,10 +174,27 @@ public class AnalysisMenu extends JMenu {
 			Node node = nodes.getValue(nodeId);
 
 			for (Connection connection : connections) {
+				// (sum of V(node) Gi = V(node) sum of Gi because Vnode always @ 1 specific node)
+
+				// Sum of GiV(from) - sum of V(node) Gi = sum of currents from current source branches
+				// + sum of GiVi
+				// where V(from) is relative as V(fromrel) = V(from) - VheadFrom, we can also say V(from) = V(fromrel) + V(headFrom)
+				// and thus constant gets -GiV(fromrel) and left gets GiV(headFrom)
+				// where V(node) is relative as V(noderel) = V(node) - VheadNode, we can also say -V(node) = -V(noderel) + -V(headNode)
+				// and thus constant gets GiV(noderel) and left gets -GiV(headNode)
+				// thus the total constant on the RHS is Gi (V(noderel) - V(fromrel))
+
 				// convert dependent nodes to their head nodes
+				SuperNode superNodeA = superNodes.get(connection.getNodeA());
+				Node nodeAHead = superNodeA.getHead();
+				double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeAHead);
+
+				SuperNode superNodeB = superNodes.get(connection.getNodeB());
+				Node nodeBHead = superNodeB.getHead();
+				double nodeBVoltageRelativeToHead = superNodeB.getVoltageRelativeToHead(nodeBHead);
 
 				// ensure this connection connects to the node being analysed
-				if (!connection.getNodeA().equals(node) && !connection.getNodeB().equals(node)) {
+				if (!nodeAHead.equals(node) && !nodeBHead.equals(node)) {
 					continue;
 				}
 
@@ -177,39 +205,49 @@ public class AnalysisMenu extends JMenu {
 				// any where our target node is actually A are 'backwards'.
 				boolean backwards = node.equals(connection.getNodeA());
 
-				// Sum of GiV(from) - V(node) * sum of Gi = sum of currents from current source branches
-				// + sum of GiVi
+				// Actually implement the equation (see: earlier)
 
 				// if a current source branch, just use that
 				// otherwise use the conductance and voltages
 				CurrentSource currentSource = connection.getCurrentSource();
 
 				if (currentSource == null) {
+					double noderel;
+					double fromrel;
+
 					if (backwards) {
-						// node A is node
+						// node A is node, node B is from
+						noderel = nodeAVoltageRelativeToHead;
+						fromrel = nodeBVoltageRelativeToHead;
+
 						coefficientMatrix[nodeId][nodeId] -= G;
 
 						// add coefficient for node B, accounting for the case where it may be the ground node
 						// (if it is the ground node, its voltage is zero, and thus we skip this stage, cause G*V = 0)
-						Node nodeB = connection.getNodeB();
 
-						if (!nodeB.equals(ground)) {
-							coefficientMatrix[nodeId][nodes.getKey(nodeB)] += G;
+						if (!superNodeB.isGround()) {
+							coefficientMatrix[nodeId][nodes.getKey(nodeBHead)] += G;
 						}
 					} else {
-						// node B is node
+						// node B is node, node A is from
+						noderel = nodeBVoltageRelativeToHead;
+						fromrel = nodeAVoltageRelativeToHead;
+
 						coefficientMatrix[nodeId][nodeId] -= G;
 
 						// add coefficient for node A, accounting for the case where it may be the ground node
 						// (if it is the ground node, its voltage is zero, and thus we skip this stage, cause G*V = 0)
-						Node nodeA = connection.getNodeA();
 
-						if (!nodeA.equals(ground)) {
-							coefficientMatrix[nodeId][nodes.getKey(nodeA)] += G;
+						if (!superNodeA.isGround()) {
+							coefficientMatrix[nodeId][nodes.getKey(nodeAHead)] += G;
 						}
 					}
 
+					// add constant offset based on voltage source voltage
 					constantVector[nodeId] -= G * connection.getVoltageSourceVoltage();
+
+					// add coefficient for offset from head
+					constantVector[nodeId] += G * (noderel - fromrel);
 				}
 				else {
 					constantVector[nodeId] -= backwards ? -currentSource.getCurrent() : currentSource.getCurrent();
@@ -301,6 +339,41 @@ public class AnalysisMenu extends JMenu {
 		public void forEach(BiConsumer<Node, Double> callback) {
 			callback.accept(this.head, 0.0);
 			this.dependents.forEach(callback);
+		}
+
+		/**
+		 * If the ground node is a dependent, returns a new, duplicate supernode with everything relative to the ground node.
+		 * Otherwise, returns itself.
+		 */
+		public SuperNode rearrange() {
+			final Node ground = Salt.getCircuit().properties().getGroundNode();
+
+			if (this.dependents.containsKey(ground)) {
+				// we need to rearrange this supernode so that the ground node is the head
+				SuperNode newSuperNode = new SuperNode(ground);
+				double groundVoltage = this.dependents.get(ground);
+
+				this.forEach((node, voltageDifference) -> {
+					if (node.equals(ground)) {
+						return;
+					}
+
+					newSuperNode.addNode(node, voltageDifference - groundVoltage);
+				});
+
+				return newSuperNode;
+			}
+
+			return this;
+		}
+
+		/**
+		 * Get whether this supernode's head is the ground.
+		 * @return whether this supernode has the ground node as the head.
+		 */
+		public boolean isGround() {
+			final Node ground = Salt.getCircuit().properties().getGroundNode();
+			return this.head.equals(ground);
 		}
 
 		/**
