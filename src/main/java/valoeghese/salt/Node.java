@@ -11,7 +11,7 @@ public class Node {
 	@SerialisedName("Position")
 	IntPosition position;
 
-	private transient OptionalDouble displayVoltage;
+	private transient OptionalDouble displayVoltage = OptionalDouble.empty();
 
 	/**
 	 * Set the voltage to display on top of the node.

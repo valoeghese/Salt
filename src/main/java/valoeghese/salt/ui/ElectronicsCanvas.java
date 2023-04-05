@@ -131,7 +131,9 @@ public class ElectronicsCanvas extends JPanel {
 
 	/**
 	 * Draws centered text on the screen at the given position.
+	 * @param g the graphics object to draw on
 	 * @param position the position of the centre of text in the sketch
+	 * @param text the text to draw
 	 */
 	private void drawCenteredText(Graphics g, Position position, String text) {
 		FontMetrics metrics = g.getFontMetrics();
@@ -205,6 +207,12 @@ public class ElectronicsCanvas extends JPanel {
 	@Override
 	public void paintComponent(Graphics g) {
 		Canvas canvas = new Canvas(this, (Graphics2D) g);
+
+		// font
+		Font comicSans = Font.getFont("Comic Sans MS");
+		if (comicSans != null) {
+			g.setFont(comicSans);
+		}
 
 		// softer palette than white and black
 		g.setColor(new Color(220, 220, 220));
@@ -349,7 +357,7 @@ public class ElectronicsCanvas extends JPanel {
 			// draw voltage string
 			node.getDisplayVoltage().ifPresent(voltage -> {
 				g.setColor(Color.RED);
-				this.drawCenteredText(g, new Position(node.getPosition()), Units.getUnitString(voltage, "V"));
+				this.drawCenteredText(g, new Position(node.getPosition()).add(0, 0.25), Units.getUnitString(voltage, "V"));
 				g.setColor(DOTS_COLOUR);
 			});
 		}

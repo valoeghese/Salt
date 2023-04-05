@@ -8,6 +8,10 @@ public record Position(double x, double y) {
 		this(position.x(), position.y());
 	}
 
+	public Position add(double x, double y) {
+		return new Position(this.x + x, this.y + y);
+	}
+
 	/**
 	 * Linearly interpolates (lerps) between two positions.
 	 * @param other the other position to lerp to.
