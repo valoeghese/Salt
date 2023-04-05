@@ -1,11 +1,43 @@
 package valoeghese.salt.utils;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
 public class HashBiMap<K, V> implements BiMap<K, V> {
+	public HashBiMap() {
+	}
+
+	/**
+	 * Creates a new HashBiMap with the same key-value mappings as the given Map.
+	 * @param map the Map to copy.
+	 */
+	public HashBiMap(Map<K, V> map) {
+		map.forEach(this::put);
+	}
+
+	/**
+	 * Creates a new HashBiMap with the same key-value mappings as the given Map.
+	 * @param reverseMap the Map to copy.
+	 * @param reverse whether the given Map is the reverse map.
+	 */
+	public HashBiMap(Map<V, K> reverseMap, boolean reverse) {
+		if (reverse) {
+			reverseMap.forEach((v, k) -> this.put(k, v));
+		} else {
+			throw new IllegalArgumentException("This constructor is only for reverse maps");
+		}
+	}
+
+	/**
+	 * Creates a new HashBiMap with the same key-value mappings as the given BiMap.
+	 * @param biMap the BiMap to copy.
+	 */
+	public HashBiMap(BiMap<K, V> biMap) {
+		biMap.forEach(this::put);
+	}
 	private final HashMap<K, V> map = new HashMap<>();
 	private final HashMap<V, K> reverseMap = new HashMap<>();
 

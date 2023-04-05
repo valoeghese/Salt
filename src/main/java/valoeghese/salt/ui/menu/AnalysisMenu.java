@@ -69,6 +69,9 @@ public class AnalysisMenu extends JMenu {
 						// add nodeB to supernodeA
 						double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
 						superNodeA.addNode(nodeB, nodeAVoltageRelativeToHead + voltageDiff);
+
+						// add into the map
+						superNodes.put(nodeB, superNodeA);
 					} else {
 						// merge supernodes
 						double nodeAVoltageRelativeToHead = superNodeA.getVoltageRelativeToHead(nodeA);
@@ -111,12 +114,17 @@ public class AnalysisMenu extends JMenu {
 				groundSupernode.forEach((node, relVoltage) -> superNodes.put(node, trueGroundSupernode));
 			}
 
+			System.out.println("Super nodes:");
+			superNodes.values().stream().distinct().forEach(sn -> System.out.println("-\t" + sn));
+			System.out.println();
+
 			System.out.println("> Non-Important Nodes (NOT IMPLEMENTED)");
 
 			System.out.println("Analysing Node Voltages");
 			System.out.println("> Computing Coefficient Matrix and Vector of Constants");
 
-			BiMap<Integer, Node> nodes = AnalysisMenu.this.createNodeIdMap(superNodes.keySet());
+			Collection<Node> heads = superNodes.values().stream().distinct().map(SuperNode::getHead).collect(Collectors.toList());
+			BiMap<Integer, Node> nodes = AnalysisMenu.this.createNodeIdMap(heads);
 			SystemOfEquations system = AnalysisMenu.this.computeSystemOfEquations(nodes, superNodes);
 
 			System.out.println("> Solving Matrix");
@@ -133,27 +141,23 @@ public class AnalysisMenu extends JMenu {
 		this.add(analyseNodes);
 	}
 
-	private BiMap<Integer, Node> createNodeIdMap(Collection<Node> nodes) {
+	private BiMap<Integer, Node> createNodeIdMap(Collection<Node> heads) {
 		// create temporary ids for each node
-		Map<String, Integer> nodeIds = new HashMap<>();
+		Map<Node, Integer> nodeIds = new HashMap<>();
 		int id = 0;
 		final Node groundNode = Salt.getCircuit().properties().getGroundNode();
 
-		for (Node node : nodes) {
+		for (Node node : heads) {
 			// skip the ground node
 			if (node.equals(groundNode)) {
 				continue;
 			}
 
-			nodeIds.put(node.getName(), id++);
+			nodeIds.put(node, id++);
 		}
 
 		// create bimap of id to node
-
-		return Salt.getCircuit().nodes().entrySet()
-				.parallelStream()
-				.filter(e -> !e.getValue().equals(groundNode))
-				.collect(HashBiMap.collectToHashBiMap(e -> nodeIds.get(e.getKey()), Map.Entry::getValue));
+		return new HashBiMap<>(nodeIds, true);
 	}
 
 	private SystemOfEquations computeSystemOfEquations(BiMap<Integer, Node> nodes, Map<Node, SuperNode> superNodes) {
@@ -392,6 +396,14 @@ public class AnalysisMenu extends JMenu {
 
 			// add the other supernode's head to this supernode
 			this.dependents.put(other.head, headDifference);
+		}
+
+		@Override
+		public String toString() {
+			return "SuperNode{" +
+					"head=" + this.head +
+					", dependents=" + this.dependents +
+					'}';
 		}
 	}
 }
