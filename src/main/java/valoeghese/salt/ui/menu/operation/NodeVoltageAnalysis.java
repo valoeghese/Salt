@@ -48,11 +48,20 @@ public class NodeVoltageAnalysis extends JMenuItem {
 			System.out.println(system);
 			double[] solution = system.solve();
 
-			// print solution array
+			// print solution array and set display voltages
 			for (int i = 0; i < solution.length; i++) {
-				System.out.println("Node " + nodes.getValue(i) + ": " + solution[i]);
-				nodes.getValue(i).setDisplayVoltage(solution[i]);
+				Node solvedHeadNode = nodes.getValue(i);
+				double voltage = solution[i];
+
+				// print
+				System.out.println("Node " + solvedHeadNode + ": " + voltage);
+
+				// set display voltages for head and dependents
+				superNodes.get(solvedHeadNode).forEach((node, voltageOffset) -> node.setDisplayVoltage(voltage + voltageOffset));
 			}
+
+			// set display voltages for ground
+			superNodes.get(Salt.getCircuit().properties().getGroundNode()).forEach(Node::setDisplayVoltage);
 
 			// update screen
 			Salt.refresh();

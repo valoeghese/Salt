@@ -25,7 +25,10 @@ public class FileMenu extends JMenu {
 
 		this.add(new JMenuItem("Save Copy"));
 		this.addSeparator();
-		this.add(new JMenuItem("Exit"));
+
+		JMenuItem exit = new JMenuItem("Exit");
+		exit.addActionListener(l -> System.exit(0)); // todo prompt if not saved
+		this.add(exit);
 	}
 
 	static class NewMenu extends JMenu {
